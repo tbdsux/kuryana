@@ -1,7 +1,6 @@
 from .parser import Parser
 import requests
 from bs4 import BeautifulSoup
-import time
 
 # TBU -> for searching dramas
 class Search(Parser):
@@ -10,8 +9,6 @@ class Search(Parser):
         self.url = "search?q="
 
     async def get(self, query):
-        # sleep for one second
-        time.sleep(1)
 
         # search the website with the query and get the soup
         soup = BeautifulSoup(

@@ -1,7 +1,6 @@
 from .parser import Parser
 import requests
 from bs4 import BeautifulSoup
-import time
 
 
 class Fetch(Parser):
@@ -9,9 +8,6 @@ class Fetch(Parser):
         super().__init__()
 
     async def get(self, title):
-        # sleep for one second
-        time.sleep(1)
-
         # get the website and soup
         soup = BeautifulSoup(
             requests.get(self.website + title, headers=self.headers).text, "html.parser"
