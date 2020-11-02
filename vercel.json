@@ -1,0 +1,6 @@
+{
+    "routes": [{
+        "src": "/(.*)",
+        "dest": "api/main.py"
+    }]
+}
