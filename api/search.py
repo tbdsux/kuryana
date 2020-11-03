@@ -9,7 +9,6 @@ class Search(Parser):
         self.url = "search?q="
 
     async def get(self, query):
-
         # search the website with the query and get the soup
         soup = BeautifulSoup(
             requests.get(
@@ -21,31 +20,48 @@ class Search(Parser):
         # get the results
         results = soup.find_all("div", class_="box")
 
-        dramas = {}
+        try:
+            dramas = {}
 
-        # parse each to dramas dictionary
-        for i, result in enumerate(results):
-            drama = {}
+            # parse each to dramas dictionary
+            for i, result in enumerate(results):
+                drama = {}
 
-            # extract drama title
-            title = result.find("h6", class_="text-primary title").find("a").get_text()
-            drama["title"] = title.replace("\n", "")
+                # extract drama title
+                title = (
+                    result.find("h6", class_="text-primary title").find("a").get_text()
+                )
+                drama["title"] = title.replace("\n", "")
 
-            drama["slug"] = (
-                result.find("h6", class_="text-primary title")
-                .find("a")["href"]
-                .replace("/", "")
-            )
+                drama["slug"] = (
+                    result.find("h6", class_="text-primary title")
+                    .find("a")["href"]
+                    .replace("/", "")
+                )
 
-            # extract the url
-            drama["url"] = self.website + result.find(
-                "h6", class_="text-primary title"
-            ).find("a")["href"].replace("/", "")
+                # extract the url
+                drama["url"] = self.website + result.find(
+                    "h6", class_="text-primary title"
+                ).find("a")["href"].replace("/", "")
 
-            # extract the thumbnail
-            drama["thumb"] = result.find("img", class_="img-responsive")["data-cfsrc"]
+                # extract the thumbnail
+                drama["thumb"] = result.find("img", class_="img-responsive")[
+                    "data-cfsrc"
+                ]
 
-            # append to the dramas
-            dramas[i] = drama
+                # append to the dramas
+                dramas[i] = drama
 
-        return dramas
+            return dramas
+
+        except Exception:
+            # if there are no search results,
+            # get the err message
+            error = results[0]
+
+            err = {}
+            err["status"] = "Nothing was found..."
+            err["error"] = error.find("div", class_="box-header").get_text()
+            err["info"] = [i.get_text() for i in error.find("ul").find_all("li")]
+
+            return err
