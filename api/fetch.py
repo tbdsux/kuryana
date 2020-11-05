@@ -16,6 +16,14 @@ class Fetch(Parser):
         # get the container
         container = soup.find("div", class_="app-body")
 
+        # get the details
+        details = soup.find("ul", class_="list m-a-0 hidden-md-up")
+
+        # others
+        others = soup.find("div", class_="show-detailsxss").find(
+            "ul", class_="list m-a-0"
+        )
+
         try:
             drama = {}
 
@@ -30,19 +38,42 @@ class Fetch(Parser):
                 "data-cfsrc"
             ]
             drama["synopsis"] = (
-                container.find("div", class_="show-synopsis").find("span").get_text()
+                container.find("div", class_="show-synopsis")
+                .find("span")
+                .get_text()
+                .replace("\n", " ")
             )
             drama["casts"] = [
                 i.find("a", class_="text-primary text-ellipsis").find("b").get_text()
                 for i in container.find_all("li", class_="list-item col-sm-4")
             ]
 
+            # get the details
+            drama["details"] = {}
+            all_details = details.find_all("li")
+            for i in all_details:
+                # get each li from <ul>
+                _title = i.find("b").get_text()
+                drama["details"][
+                    _title.replace(":", "").replace(" ", "_").lower()
+                ] = i.get_text().replace(_title + " ", "")
+
+            # get other details
+            drama["others"] = {}
+            all_others = others.find_all("li")
+            for i in all_others:
+                # get each li from <ul>
+                _title = i.find("b").get_text()
+                drama["others"][
+                    _title.replace(":", "").replace(" ", "_").lower()
+                ] = i.get_text().replace(_title + " ", "")
+
             return drama
 
         except Exception:
             # if the page was not found,
             # or there was a problem with scraping,
-            # return the err message
+            # try to get the error and return the err message
             err = {}
             err["status"] = "404 Not Found"
             err["error"] = (
