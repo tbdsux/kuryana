@@ -21,7 +21,9 @@ class Search(Parser):
         results = soup.find_all("div", class_="box")
 
         try:
-            dramas = {}
+            # contain the results in a list
+            res = {}
+            res["results"] = []
 
             # parse each to dramas dictionary
             for i, result in enumerate(results):
@@ -61,9 +63,9 @@ class Search(Parser):
                 ]
 
                 # append to the dramas
-                dramas[i] = drama
+                res["results"].append(drama)
 
-            return dramas
+            return res
 
         except Exception:
             # if there are no search results,
