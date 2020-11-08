@@ -1,4 +1,4 @@
-from api.parser import Parser
+from .parser import Parser
 import requests
 from bs4 import BeautifulSoup
 
@@ -8,7 +8,7 @@ class Search(Parser):
         super().__init__()
         self.url = "search?q="
 
-    def get(self, query):
+    async def get(self, query):
         # search the website with the query and get the soup
         soup = BeautifulSoup(
             requests.get(
