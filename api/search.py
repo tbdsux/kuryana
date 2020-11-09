@@ -8,7 +8,7 @@ class Search(Parser):
         super().__init__()
         self.url = "search?q="
 
-    def get(self, query):
+    async def get(self, query):
         # search the website with the query and get the soup
         soup = BeautifulSoup(
             requests.get(
