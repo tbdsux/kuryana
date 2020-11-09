@@ -8,7 +8,7 @@ class Search(Parser):
         super().__init__()
         self.url = "search?q="
 
-    async def get(self, query):
+    def get(self, query):
         # search the website with the query and get the soup
         soup = BeautifulSoup(
             requests.get(
@@ -51,7 +51,7 @@ class Search(Parser):
                         .replace("/", "")
                     )
 
-                    drama["ranking"] = ranking
+                    drama["ranking"] = ranking.get_text()
 
                     try:
                         # extract the type and year
