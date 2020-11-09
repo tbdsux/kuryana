@@ -27,43 +27,59 @@ class Search(Parser):
 
             # parse each to dramas dictionary
             for i, result in enumerate(results):
-                drama = {}
-
-                # extract drama title
-                title = (
-                    result.find("h6", class_="text-primary title").find("a").get_text()
-                )
-                drama["title"] = title.replace("\n", "")
-
-                drama["slug"] = (
-                    result.find("h6", class_="text-primary title")
-                    .find("a")["href"]
-                    .replace("/", "")
-                )
-
                 try:
-                    # extract the type and year
-                    _typeyear = result.find("span", class_="text-muted").get_text()
-                    drama["type"] = _typeyear.split("-")[0].strip()
+                    # get the ranking
+                    # if there is, it can be a series or a movie,
+                    # persons have likes so, all shows / movies should have a ranking
+                    ranking = result.find("div", class_="ranking pull-right").find(
+                        "span"
+                    )
 
-                    _year_eps = _typeyear.split("-")[1]
-                    drama["year"] = _year_eps.split(",")[0].strip()
-                    drama["series"] = _year_eps.split(",")[1].strip()
+                    drama = {}
+
+                    # extract drama title
+                    title = (
+                        result.find("h6", class_="text-primary title")
+                        .find("a")
+                        .get_text()
+                    )
+                    drama["title"] = title.replace("\n", "")
+
+                    drama["slug"] = (
+                        result.find("h6", class_="text-primary title")
+                        .find("a")["href"]
+                        .replace("/", "")
+                    )
+
+                    drama["ranking"] = ranking
+
+                    try:
+                        # extract the type and year
+                        _typeyear = result.find("span", class_="text-muted").get_text()
+                        drama["type"] = _typeyear.split("-")[0].strip()
+
+                        _year_eps = _typeyear.split("-")[1]
+                        drama["year"] = _year_eps.split(",")[0].strip()
+                        drama["series"] = _year_eps.split(",")[1].strip()
+                    except Exception:
+                        pass
+
+                    # extract the url
+                    drama["url"] = self.website + result.find(
+                        "h6", class_="text-primary title"
+                    ).find("a")["href"].replace("/", "")
+
+                    # extract the thumbnail
+                    drama["thumb"] = result.find("img", class_="img-responsive")[
+                        "data-cfsrc"
+                    ]
+
+                    # append to the dramas
+                    res["results"].append(drama)
+
                 except Exception:
+                    # do nothing is the ranking doesn't exist
                     pass
-
-                # extract the url
-                drama["url"] = self.website + result.find(
-                    "h6", class_="text-primary title"
-                ).find("a")["href"].replace("/", "")
-
-                # extract the thumbnail
-                drama["thumb"] = result.find("img", class_="img-responsive")[
-                    "data-cfsrc"
-                ]
-
-                # append to the dramas
-                res["results"].append(drama)
 
             return res
 
