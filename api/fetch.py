@@ -54,9 +54,9 @@ class Fetch(Parser):
             for i in all_details:
                 # get each li from <ul>
                 _title = i.find("b").get_text()
-                drama["details"][
-                    _title.replace(":", "").replace(" ", "_").lower()
-                ] = i.get_text().replace(_title + " ", "")
+                drama["details"][_title.replace(":", "").replace(" ", "_").lower()] = (
+                    i.get_text().replace(_title + " ", "").strip()
+                )  # remove leading and trailing white spaces
 
             # get other details
             drama["others"] = {}
@@ -64,9 +64,9 @@ class Fetch(Parser):
             for i in all_others:
                 # get each li from <ul>
                 _title = i.find("b").get_text()
-                drama["others"][
-                    _title.replace(":", "").replace(" ", "_").lower()
-                ] = i.get_text().replace(_title + " ", "")
+                drama["others"][_title.replace(":", "").replace(" ", "_").lower()] = (
+                    i.get_text().replace(_title + " ", "").strip()
+                )  # remove leading and trailing white spaces
 
             return drama
 
