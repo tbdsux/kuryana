@@ -1,4 +1,4 @@
-from .parser import Parser
+from api.parser import Parser
 import requests
 from bs4 import BeautifulSoup
 
@@ -82,3 +82,6 @@ class Fetch(Parser):
             err["info"] = container.find("div", class_="box-body").find("p").get_text()
 
             return err
+
+    async def cache(self, result):
+        pass

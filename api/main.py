@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
-from .search import Search
-from .fetch import Fetch
+from api.search import Search
+from api.fetch import Fetch
 
 app = FastAPI()
 

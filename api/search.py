@@ -1,4 +1,4 @@
-from .parser import Parser
+from api.parser import Parser
 import requests
 from bs4 import BeautifulSoup
 
@@ -20,22 +20,20 @@ class Search(Parser):
         # get the results
         results = soup.find_all("div", class_="box")
 
-        try:
-            # contain the results in a list
-            res = {}
-            res["results"] = []
+        # contain the results in a list
+        res = {}
+        res["results"] = []
 
-            # parse each to dramas dictionary
-            for i, result in enumerate(results):
-                try:
-                    # get the ranking
-                    # if there is, it can be a series or a movie,
-                    # persons have likes so, all shows / movies should have a ranking
-                    ranking = result.find("div", class_="ranking pull-right").find(
-                        "span"
-                    )
-
+        # parse each to dramas dictionary
+        for result in results:
+            try:
+                # get the MDL-ID
+                # if there is, it can be a series or a movie,
+                # persons have likes so, all shows / movies should have a ranking
+                if result["id"].startswith("mdl-"):
                     drama = {}
+
+                    drama["mdl_id"] = result["id"]
 
                     # extract drama title
                     title = (
@@ -51,7 +49,14 @@ class Search(Parser):
                         .replace("/", "")
                     )
 
-                    drama["ranking"] = ranking.get_text()
+                    # get the ranking if it exists
+                    try:
+                        ranking = result.find("div", class_="ranking pull-right").find(
+                            "span"
+                        )
+                        drama["ranking"] = ranking.get_text()
+                    except AttributeError:
+                        drama["ranking"] = None
 
                     try:
                         # extract the type and year
@@ -71,26 +76,12 @@ class Search(Parser):
 
                     # extract the thumbnail
                     drama["thumb"] = result.find("img", class_="img-responsive")[
-                        "data-cfsrc"
+                        "data-src"
                     ]
 
                     # append to the dramas
                     res["results"].append(drama)
+            except Exception:
+                pass
 
-                except Exception:
-                    # do nothing is the ranking doesn't exist
-                    pass
-
-            return res
-
-        except Exception:
-            # if there are no search results,
-            # get the err message
-            error = results[0]
-
-            err = {}
-            err["status"] = "Nothing was found..."
-            err["error"] = error.find("div", class_="box-header").get_text()
-            err["info"] = [i.get_text() for i in error.find("ul").find_all("li")]
-
-            return err
+        return res
