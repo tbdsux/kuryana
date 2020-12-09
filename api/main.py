@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 
-from api.search import Search
-from api.fetch import Fetch
+from api.utils import search_func, fetch_func
 
 app = FastAPI()
 
@@ -13,11 +12,21 @@ async def index():
 
 @app.get("/search/q/{query}")
 async def search(query: str):
-    q = Search()
-    return await q.get(query)
+    search = await search_func(query=query)
+
+    # ! FALSE OUTPUT
+    if not search:
+        return "There was a problem with the search function. Please try again later."
+
+    return search
 
 
 @app.get("/id/{drama_id}")
 async def fetch(drama_id: str):
-    f = Fetch()
-    return await f.get(drama_id)
+    fetch = await fetch_func(drama_id=drama_id)
+
+    # ! FALSE OUTPUT
+    if not fetch:
+        return "There was a problem with the fetch function. Please try again later."
+
+    return fetch
