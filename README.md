@@ -12,3 +12,8 @@ https://kuryana.vercel.app/search/q/{yourquery}
 ```
 https://kuryana.vercel.app/id/{mydramalist-slug}
 ```
+
+## NOTE:
+All Requests and SCRAPED Datas are not cached by Vercel or the API itself.
+
+#### &copy; TheBoringDude
