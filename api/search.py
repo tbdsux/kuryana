@@ -1,5 +1,4 @@
 from api.parser import Parser
-from bs4 import BeautifulSoup
 
 # TBU -> for searching dramas
 class Search(Parser):

@@ -1,6 +1,4 @@
 from api.parser import Parser
-import httpx
-from bs4 import BeautifulSoup
 
 
 class Fetch(Parser):
@@ -23,7 +21,6 @@ class Fetch(Parser):
         self.drama_info["poster"] = container.find("img", class_="img-responsive")[
             "src"
         ]
-        print(container.find("img", class_="img-responsive"))
         self.drama_info["synopsis"] = (
             container.find("div", class_="show-synopsis")
             .find("span")
@@ -58,7 +55,8 @@ class Fetch(Parser):
                 )  # remove leading and trailing white spaces
 
         except Exception:
-            print("Error scraping drama details section.")
+            # do nothing, if there was a problem
+            pass
 
     # get other info
     def get_other_info(self):
@@ -79,7 +77,9 @@ class Fetch(Parser):
                 )  # remove leading and trailing white spaces
 
         except Exception:
-            print("Error scraping drama others section.")
+            # there was a problem while trying to parse
+            # the :> other info section
+            pass
 
     # get page err, if possible
     def res_get_err(self):
@@ -89,10 +89,16 @@ class Fetch(Parser):
         # or there was a problem with scraping,
         # try to get the error and return the err message
         err = {}
-        err["status"] = "404 Not Found"
-        err["status_code"] = self.status_code
-        err["error"] = container.find("div", class_="box-body").find("h1").get_text()
-        err["info"] = container.find("div", class_="box-body").find("p").get_text()
+
+        try:
+            err["status"] = "404 Not Found"
+            err["status_code"] = self.status_code
+            err["error"] = (
+                container.find("div", class_="box-body").find("h1").get_text()
+            )
+            err["info"] = container.find("div", class_="box-body").find("p").get_text()
+        except Exception:
+            pass
 
         return err
 
@@ -105,12 +111,9 @@ class Fetch(Parser):
             self.get_other_info()
 
         except Exception:
-            try:
-                return self.res_get_err()
-            except Exception:
-                pass
-
-            print("Err scraping the webpage!")
+            # there was a problem with one of
+            # the functions above
+            return False
 
         # return the compiled
         return True

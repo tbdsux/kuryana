@@ -15,8 +15,6 @@ async def search_func(query):
                 # return the results
                 return func.SEARCH()
 
-        print("Status Code Err!")
-
     return False
 
 
@@ -32,8 +30,11 @@ async def fetch_func(drama_id):
             # get the drama data
             if func.get_drama():
                 # return the result
-                return func.FETCH()
+                return True, func.FETCH()
 
-        return func.res_get_err()
+        err = func.res_get_err()
+        if len(err) > 0:
+            # return the 404 error from the website
+            return False, err
 
-    return False
+    return False, False

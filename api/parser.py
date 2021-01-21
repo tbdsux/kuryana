@@ -55,10 +55,7 @@ class Parser:
 
             # set the status code
             self.status_code = resp.status_code
-
-            await client.aclose()  # close coroutine connection
         except Exception:
-            print("There was a problem while requesting to the site.")
             return False
 
         # return True, signify done
