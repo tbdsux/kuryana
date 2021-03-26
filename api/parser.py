@@ -51,7 +51,7 @@ class Parser:
                 resp = await client.get(self.website_def(), timeout=None)
 
             # set the main soup var
-            self.soup = BeautifulSoup(resp.text, "html.parser")
+            self.soup = BeautifulSoup(resp.text, "lxml")
 
             # set the status code
             self.status_code = resp.status_code
