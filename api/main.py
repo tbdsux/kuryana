@@ -3,6 +3,9 @@ from starlette.status import HTTP_404_NOT_FOUND, HTTP_500_INTERNAL_SERVER_ERROR
 
 from api.utils import search_func, fetch_func
 
+# bypassing cloudflare anti-bot
+import cloudscraper
+
 app = FastAPI()
 
 
@@ -42,3 +45,13 @@ async def fetch(drama_id: str, response: Response):
         return fetch
 
     return fetch
+
+
+# get seasonal drama list -- official api available, use it with cloudflare bypass 
+@app.get("/seasonal/{year}/{quarter}")
+async def mdlSeasonal(year: int, quarter: int):
+    scraper = cloudscraper.create_scraper()
+    return scraper.post("https://mydramalist.com/v1/quarter_calendar", data = { "quarter": quarter, "year": year }).json()
+    # year -> ex. ... / 2019 / 2020 / 2021 / ...
+    # quarter -> every 3 months (Jan-Mar=1, Apr-Jun=2, Jul-Sep=3, Oct-Dec=4)
+    # --- seasonal information --- winter --- spring --- summer --- fall ---

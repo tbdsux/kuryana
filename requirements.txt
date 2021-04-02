@@ -13,3 +13,4 @@ sniffio==1.2.0
 soupsieve==2.2.1
 starlette==0.13.6
 typing-extensions==3.7.4.3
+cloudscraper==1.2.56

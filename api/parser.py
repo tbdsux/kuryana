@@ -1,4 +1,8 @@
-import httpx
+# import httpx
+
+# bypassing cloudflare anti-bot
+import cloudscraper
+
 from bs4 import BeautifulSoup
 from datetime import datetime
 
@@ -47,8 +51,12 @@ class Parser:
     # website getter / page source grabber
     async def scrape(self):
         try:
-            async with httpx.AsyncClient() as client:
-                resp = await client.get(self.website_def(), timeout=None)
+            # async with httpx.AsyncClient() as client:
+            #     resp = await client.get(self.website_def(), timeout=None)
+
+            # bypassing cloudflare anti-bot
+            scraper = cloudscraper.create_scraper()
+            resp = scraper.get(self.website_def())
 
             # set the main soup var
             self.soup = BeautifulSoup(resp.text, "lxml")

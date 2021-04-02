@@ -12,6 +12,10 @@ https://kuryana.vercel.app/search/q/{yourquery}
 ```
 https://kuryana.vercel.app/id/{mydramalist-slug}
 ```
+- [Get seasonal drama](https://kuryana.vercel.app/seasonal/)
+```
+https://kuryana.vercel.app/seasonal/{year}/{quarter}
+```
 
 ## NOTE:
 All Requests and SCRAPED Datas are not cached by Vercel or the API itself.
