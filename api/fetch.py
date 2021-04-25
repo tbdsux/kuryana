@@ -5,6 +5,7 @@ class Fetch(Parser):
     def __init__(self, query) -> None:
         super().__init__(query)
         self.url = self.query
+        self._img_attrs = ["src", "data-cfsrc", "data-src"]
 
     # get the main html container for the each search results
     def get_main_container(self):
@@ -18,9 +19,7 @@ class Fetch(Parser):
         self.drama_info["rating"] = float(
             (container.find("div", class_="col-film-rating").find("div").get_text())
         )
-        self.drama_info["poster"] = container.find("img", class_="img-responsive")[
-            "src"
-        ]
+        self.drama_info["poster"] = self._get_drama_poster(container)
         self.drama_info["synopsis"] = (
             container.find("div", class_="show-synopsis")
             .find("span")
@@ -34,6 +33,16 @@ class Fetch(Parser):
             .strip()
             for i in container.find_all("li", class_="list-item col-sm-4")
         ]
+
+    def _get_drama_poster(self, container) -> str:
+        poster = container.find("img", class_="img-responsive")
+
+        for i in self._img_attrs:
+            if poster.has_attr(i):
+                return poster[i]
+
+        # blank if none
+        return ""
 
     # get the drama details <= statistics section is added in here
     def get_details(self):

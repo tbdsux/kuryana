@@ -56,7 +56,7 @@ class Parser:
 
             # bypassing cloudflare anti-bot
             scraper = cloudscraper.create_scraper()
-            resp = scraper.get(self.website_def())
+            resp = scraper.get(self.website_def(), headers=self.headers)
 
             # set the main soup var
             self.soup = BeautifulSoup(resp.text, "lxml")
