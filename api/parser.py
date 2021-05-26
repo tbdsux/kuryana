@@ -6,6 +6,7 @@ import cloudscraper
 from bs4 import BeautifulSoup
 from datetime import datetime
 
+
 # MAIN Parser class
 class Parser:
     def __init__(self, query) -> None:

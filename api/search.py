@@ -1,5 +1,6 @@
 from api.parser import Parser
 
+
 # TBU -> for searching dramas
 class Search(Parser):
     def __init__(self, query) -> None:

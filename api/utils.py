@@ -1,7 +1,8 @@
 from api.search import Search
 from api.fetch import Fetch
 
-## search function
+
+# search function
 async def search_func(query):
     func = Search(query=query)  # initiate
 
@@ -18,7 +19,7 @@ async def search_func(query):
     return False
 
 
-## fetch function
+# fetch function
 async def fetch_func(drama_id):
     func = Fetch(query=drama_id)
 

@@ -1,5 +1,14 @@
 {
-  "extends": [
-    "config:base"
-  ]
+	"labels": ["update dependencies"],
+	"packageRules": [
+		{
+			"matchPackagePatterns": [
+				"fastapi",
+				"cloudscraper",
+				"bs4"
+			],
+			"labels": ["core"]
+		}
+	],
+	"schedule": "monthly"
 }
