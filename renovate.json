@@ -1,14 +1,13 @@
 {
-	"labels": ["update dependencies"],
-	"packageRules": [
-		{
-			"matchPackagePatterns": [
-				"fastapi",
-				"cloudscraper",
-				"bs4"
-			],
-			"labels": ["core"]
-		}
+	"separateMajorMinor": false,
+	"extends": [
+		":preserveSemverRanges",
+		"group:all",
+		"schedule:monthly",
+		":maintainLockFilesMonthly"
 	],
-	"schedule": "monthly"
+	"lockFileMaintenance": {
+		"extends": ["group:all"],
+		"commitMessageAction": "Update"
+	}
 }
