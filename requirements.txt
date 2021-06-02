@@ -27,5 +27,5 @@ starlette==0.14.2
 toml==0.10.2
 typed-ast==1.4.3
 typing-extensions==3.10.0.0
-urllib3==1.26.4
+urllib3==1.26.5
 zipp==3.4.1
