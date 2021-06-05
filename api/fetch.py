@@ -16,12 +16,12 @@ class Fetch(Parser):
 
         # TITLE
         self.drama_info["title"] = (
-            container.find("h1", class_="film-title").find("a").get_text()
+            container.find("h1", class_="film-title").find("a").text
         )
 
         # RATING
         self.drama_info["rating"] = float(
-            (container.find("div", class_="col-film-rating").find("div").get_text())
+            (container.find("div", class_="col-film-rating").find("div").text)
         )
 
         # POSTER
@@ -31,7 +31,7 @@ class Fetch(Parser):
         self.drama_info["synopsis"] = (
             container.find("div", class_="show-synopsis")
             .find("span")
-            .get_text()
+            .text
             .replace("\n", " ")
         )
 
@@ -68,13 +68,13 @@ class Fetch(Parser):
 
             for i in all_details:
                 # get each li from <ul>
-                _title = i.find("b").get_text().strip()
+                _title = i.find("b").text.strip()
 
                 # append each to sub object
                 self.drama_info["details"][
                     _title.replace(":", "").replace(" ", "_").lower()
                 ] = (
-                    i.get_text().replace(_title + " ", "").strip()
+                    i.text.replace(_title + " ", "").strip()
                 )  # remove leading and trailing white spaces
 
         except Exception:
@@ -92,11 +92,11 @@ class Fetch(Parser):
             all_others = others.find_all("li")
             for i in all_others:
                 # get each li from <ul>
-                _title = i.find("b").get_text().strip()
+                _title = i.find("b").text.strip()
                 self.drama_info["others"][
                     _title.replace(":", "").replace(" ", "_").lower()
                 ] = (
-                    i.get_text().replace(_title + " ", "").strip()
+                    i.text.replace(_title + " ", "").strip()
                 )  # remove leading and trailing white spaces
 
         except Exception:
@@ -117,9 +117,9 @@ class Fetch(Parser):
             err["status"] = "404 Not Found"
             err["status_code"] = self.status_code
             err["error"] = (
-                container.find("div", class_="box-body").find("h1").get_text()
+                container.find("div", class_="box-body").find("h1").text
             )
-            err["info"] = container.find("div", class_="box-body").find("p").get_text()
+            err["info"] = container.find("div", class_="box-body").find("p").text
         except Exception:
             pass
 

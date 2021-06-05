@@ -34,12 +34,12 @@ class Search(Parser):
         except AttributeError:
             return None  # return None if the result doesn't have it
 
-        return ranking.get_text()
+        return ranking.text
 
     # get the year info of the result
     def res_get_year_info(self, result_container):
         # extract the type and year
-        _typeyear = result_container.find("span", class_="text-muted").get_text()
+        _typeyear = result_container.find("span", class_="text-muted").text
         _year_eps = _typeyear.split("-")[1]
 
         # get the drama type [movie / series]
@@ -78,7 +78,7 @@ class Search(Parser):
 
             # extract drama title
             title = result.find("h6", class_="text-primary title").find("a")
-            drama["title"] = title.get_text().replace("\n", "")
+            drama["title"] = title.text.replace("\n", "")
             drama["slug"] = title["href"].replace("/", "")
 
             # drama ranking
