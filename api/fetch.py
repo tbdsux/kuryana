@@ -13,26 +13,40 @@ class Fetch(Parser):
 
         # append scraped data
         # these are the most important drama infos / details
+
+        # TITLE
         self.drama_info["title"] = (
             container.find("h1", class_="film-title").find("a").get_text()
         )
+
+        # RATING
         self.drama_info["rating"] = float(
             (container.find("div", class_="col-film-rating").find("div").get_text())
         )
+
+        # POSTER
         self.drama_info["poster"] = self._get_drama_poster(container)
+
+        # SYNOPSIS
         self.drama_info["synopsis"] = (
             container.find("div", class_="show-synopsis")
             .find("span")
             .get_text()
             .replace("\n", " ")
         )
-        self.drama_info["casts"] = [
-            i.find("a", class_="text-primary text-ellipsis")
-            .find("b")
-            .get_text()
-            .strip()
-            for i in container.find_all("li", class_="list-item col-sm-4")
-        ]
+
+        # CASTS
+        __casts = container.find_all("li", class_="list-item col-sm-4")
+        casts = []
+        for i in __casts:
+            __temp_cast = i.find("a", class_="text-primary text-ellipsis")
+            casts.append(
+                {
+                    "name": __temp_cast.find("b").text.strip(),
+                    "slug": __temp_cast["href"].strip(),
+                }
+            )
+        self.drama_info["casts"] = casts
 
     def _get_drama_poster(self, container) -> str:
         poster = container.find("img", class_="img-responsive")
