@@ -1,6 +1,5 @@
 .vercel
 venv
-.vscode
 __pycache__/
 test.py
 .env

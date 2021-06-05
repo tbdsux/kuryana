@@ -1,0 +1,11 @@
+{
+    "python.pythonPath": "venv/bin/python",
+    "python.formatting.provider": "black",
+    "[json]": {
+       "editor.quickSuggestions": {
+           "strings": true
+       },
+       "editor.suggest.insertMode": "replace",
+       "editor.defaultFormatter": "esbenp.prettier-vscode"
+    }
+}
