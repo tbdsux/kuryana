@@ -15,8 +15,6 @@ class Search(BaseSearch):
         self.url = "search?q=" + self.query.replace(" ", "+")
         self.mdl_container_id = "mdl-"
 
-        self._get_search_results()
-
     # get the main html container for the each search results
     def _get_container(self) -> List:
         boxes = self.soup.find("div", class_="col-lg-8 col-md-8").find_all(

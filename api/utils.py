@@ -9,7 +9,9 @@ def error(code: int, description: str) -> Dict[str, Any]:
     return {
         "error": True,
         "code": code,
-        "description": description,
+        "description": "404 Not Found"
+        if code == 404
+        else description,  # prioritize error 404
     }
 
 
@@ -19,6 +21,8 @@ async def search_func(query: str) -> Tuple[int, Dict[str, Any]]:
     code, ok = f.check()
     if not ok:
         return code, error(code, "An unexpected error occurred.")
+    else:
+        f._get_search_results()
 
     return code, f.search()
 
@@ -34,5 +38,7 @@ async def fetch_func(query: str, t: str) -> Tuple[int, Dict[str, Any]]:
     code, ok = f.check()
     if not ok:
         return code, error(code, "An unexpected error occurred.")
+    else:
+        f._get()
 
     return code, f.fetch()

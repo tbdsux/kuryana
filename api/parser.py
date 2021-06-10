@@ -118,6 +118,9 @@ class BaseFetch(Parser):
             "scrape_date": datetime.utcnow(),
         }
 
+    def _get(self) -> None:
+        """handler for parser, override in subclass"""
+
     def _get_poster(self, container: Tag | NavigableString) -> str | Any:
         poster = container.find("img", class_="img-responsive")
 

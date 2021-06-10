@@ -46,7 +46,7 @@ async def mdlSeasonal(year: int, quarter: int) -> Any:
     # year -> ex. ... / 2019 / 2020 / 2021 / ...
     # quarter -> every 3 months (Jan-Mar=1, Apr-Jun=2, Jul-Sep=3, Oct-Dec=4)
     # --- seasonal information --- winter --- spring --- summer --- fall ---
-    
+
     scraper = cloudscraper.create_scraper()
 
     return scraper.post(

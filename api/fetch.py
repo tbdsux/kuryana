@@ -11,8 +11,6 @@ class FetchDrama(BaseFetch):
     def __init__(self, soup: BeautifulSoup, query: str, code: int, ok: bool) -> None:
         super().__init__(soup, query, code, ok)
 
-        self._get_drama()
-
     # get the main html container for the each search results
     def _get_main_container(self) -> None:
         container = self.soup.find("div", class_="app-body")
@@ -75,7 +73,7 @@ class FetchDrama(BaseFetch):
             pass
 
     # drama info details handler
-    def _get_drama(self) -> None:
+    def _get(self) -> None:
         self._get_main_container()
         self._get_details(classname="list m-a-0 hidden-md-up")
         self._get_other_info()
@@ -85,7 +83,6 @@ class FetchPerson(BaseFetch):
     def __init__(self, soup: BeautifulSoup, query: str, code: int, ok: bool) -> None:
         super().__init__(soup, query, code, ok)
 
-        self._get_person()
 
     def _get_main_container(self) -> None:
         container = self.soup.find("div", class_="app-body")
@@ -158,6 +155,6 @@ class FetchPerson(BaseFetch):
 
             self.info["works"][j] = bare_works
 
-    def _get_person(self) -> None:
+    def _get(self) -> None:
         self._get_main_container()
         self._get_details(classname="list m-b-0")
