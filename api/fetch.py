@@ -80,6 +80,8 @@ class FetchDrama(BaseFetch):
 
 
 class FetchPerson(BaseFetch):
+    non_actors = ["screenwriter", "director", "screenwriter & director"]
+
     def __init__(self, soup: BeautifulSoup, query: str, code: int, ok: bool) -> None:
         super().__init__(soup, query, code, ok)
 
@@ -115,16 +117,12 @@ class FetchPerson(BaseFetch):
         _work_tables = _works_container.find_all("table")
 
         for j, k in zip(_work_headers, _work_tables):
+            # theaders = ['episodes' if i.text.strip() == '#' else i.text.strip() for i in k.find("thead").find_all("th")]
             bare_works: List[Dict[str, Any]] = []
 
             for i in k.find("tbody").find_all("tr"):
                 _raw_year = i.find("td", class_="year").text
                 _raw_title = i.find("td", class_="title").find("a")
-                _raw_role = i.find("td", class_="role")
-                try:
-                    _raw_role_name = _raw_role.find("div", class_="name")
-                except Exception:
-                    _raw_role_name = None
 
                 r = {
                     "_slug": i["class"][0],
@@ -133,17 +131,32 @@ class FetchPerson(BaseFetch):
                         "link": urljoin(MYDRAMALIST_WEBSITE, _raw_title["href"]),
                         "name": _raw_title.text,
                     },
-                    "role": {
-                        "name": _raw_role_name.text.strip(),
-                        "id": _raw_role.find("div", class_="roleid").text.strip(),
-                    },
                     "rating": float(
-                        i.find("td", class_="text-center")
-                        .find("div", class_="text-sm")
-                        .text
+                        i.find("td", class_="text-center").find(class_="text-sm").text
                     ),
                 }
 
+                _raw_role = i.find("td", class_="role")
+
+                # applicable only on dramas / tv-shows (this is different for non-actors)
+                try:
+                    _raw_role_name = _raw_role.find("div", class_="name").text.strip()
+                except Exception:
+                    _raw_role_name = None
+
+                # use `type` for non-dramas, etc while `role` otherwise
+                try:
+                    if j in FetchPerson.non_actors:
+                        r["type"] = _raw_role.find(class_="roleid").text.strip()
+                    else:
+                        r["role"] = {
+                            "name": _raw_role_name,
+                            "id": _raw_role.find("div", class_="roleid").text.strip(),
+                        }
+                except Exception:
+                    pass
+
+                # not applicable for movies
                 try:
                     episodes = i.find("td", class_="episodes").text
                     r["episodes"] = int(episodes)
