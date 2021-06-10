@@ -4,3 +4,5 @@ __pycache__/
 test.py
 .env
 .ropeproject
+.mypy_cache
+.pytest_cache
