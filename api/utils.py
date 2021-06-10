@@ -1,41 +1,45 @@
+from __future__ import annotations
+from typing import Dict, Any, Tuple
+
 from api.search import Search
-from api.fetch import Fetch
+from api.fetch import FetchDrama, FetchPerson
+
+
+def error(code: int, description: str) -> Dict[str, Any]:
+    return {
+        "error": True,
+        "code": code,
+        "description": "404 Not Found"
+        if code == 404
+        else description,  # prioritize error 404
+    }
 
 
 # search function
-async def search_func(query):
-    func = Search(query=query)  # initiate
+async def search_func(query: str) -> Tuple[int, Dict[str, Any]]:
+    f = await Search.scrape(query=query, t="search")
+    code, ok = f.check()
+    if not ok:
+        return code, error(code, "An unexpected error occurred.")
+    else:
+        f._get_search_results()
 
-    # start searching and scrape
-    scrape = await func.scrape()
-    if scrape:
-        # assert the status code
-        if func.check_status_code():
-            # compile search results
-            if func.get_search_results():
-                # return the results
-                return func.SEARCH()
+    return code, f.search()
 
-    return False
+
+fs = {"drama": FetchDrama, "person": FetchPerson}
 
 
 # fetch function
-async def fetch_func(drama_id):
-    func = Fetch(query=drama_id)
+async def fetch_func(query: str, t: str) -> Tuple[int, Dict[str, Any]]:
+    if t not in fs.keys():
+        raise Exception("Invalid Error")
 
-    # get the drama_id info
-    scrape = await func.scrape()
-    if scrape:
-        # assert status code
-        if func.check_status_code():
-            # get the drama data
-            if func.get_drama():
-                # return the result
-                return True, func.FETCH()
+    f = await fs[t].scrape(query=query, t="page")
+    code, ok = f.check()
+    if not ok:
+        return code, error(code, "An unexpected error occurred.")
+    else:
+        f._get()
 
-        err = func.res_get_err()
-        if len(err) > 0:
-            # return the 404 error from the website
-            return False, err
-
-    return False, False
+    return code, f.fetch()

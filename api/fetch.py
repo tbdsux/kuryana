@@ -1,38 +1,39 @@
-from api.parser import Parser
+from typing import Dict, Any, List
+
+from api import MYDRAMALIST_WEBSITE
+from api.parser import BaseFetch
+
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 
 
-class Fetch(Parser):
-    def __init__(self, query) -> None:
-        super().__init__(query)
-        self.url = self.query
-        self._img_attrs = ["src", "data-cfsrc", "data-src"]
+class FetchDrama(BaseFetch):
+    def __init__(self, soup: BeautifulSoup, query: str, code: int, ok: bool) -> None:
+        super().__init__(soup, query, code, ok)
 
     # get the main html container for the each search results
-    def get_main_container(self):
+    def _get_main_container(self) -> None:
         container = self.soup.find("div", class_="app-body")
 
         # append scraped data
         # these are the most important drama infos / details
 
         # TITLE
-        self.drama_info["title"] = (
-            container.find("h1", class_="film-title").find("a").text
-        )
+        self.info["title"] = container.find("h1", class_="film-title").find("a").text
 
         # RATING
-        self.drama_info["rating"] = float(
+        self.info["rating"] = float(
             (container.find("div", class_="col-film-rating").find("div").text)
         )
 
         # POSTER
-        self.drama_info["poster"] = self._get_drama_poster(container)
+        self.info["poster"] = self._get_poster(container)
 
         # SYNOPSIS
-        self.drama_info["synopsis"] = (
+        self.info["synopsis"] = (
             container.find("div", class_="show-synopsis")
             .find("span")
-            .text
-            .replace("\n", " ")
+            .text.replace("\n", " ")
         )
 
         # CASTS
@@ -46,97 +47,126 @@ class Fetch(Parser):
                     "slug": __temp_cast["href"].strip(),
                 }
             )
-        self.drama_info["casts"] = casts
-
-    def _get_drama_poster(self, container) -> str:
-        poster = container.find("img", class_="img-responsive")
-
-        for i in self._img_attrs:
-            if poster.has_attr(i):
-                return poster[i]
-
-        # blank if none
-        return ""
-
-    # get the drama details <= statistics section is added in here
-    def get_details(self):
-        details = self.soup.find("ul", class_="list m-a-0 hidden-md-up")
-
-        try:
-            self.drama_info["details"] = {}
-            all_details = details.find_all("li")
-
-            for i in all_details:
-                # get each li from <ul>
-                _title = i.find("b").text.strip()
-
-                # append each to sub object
-                self.drama_info["details"][
-                    _title.replace(":", "").replace(" ", "_").lower()
-                ] = (
-                    i.text.replace(_title + " ", "").strip()
-                )  # remove leading and trailing white spaces
-
-        except Exception:
-            # do nothing, if there was a problem
-            pass
+        self.info["casts"] = casts
 
     # get other info
-    def get_other_info(self):
+    def _get_other_info(self) -> None:
         others = self.soup.find("div", class_="show-detailsxss").find(
             "ul", class_="list m-a-0"
         )
 
         try:
-            self.drama_info["others"] = {}
+            self.info["others"] = {}
             all_others = others.find_all("li")
             for i in all_others:
                 # get each li from <ul>
                 _title = i.find("b").text.strip()
-                self.drama_info["others"][
+                self.info["others"][
                     _title.replace(":", "").replace(" ", "_").lower()
-                ] = (
-                    i.text.replace(_title + " ", "").strip()
-                )  # remove leading and trailing white spaces
+                ] = i.text.replace(
+                    _title + " ", ""
+                ).strip()  # remove leading and trailing white spaces
 
         except Exception:
             # there was a problem while trying to parse
             # the :> other info section
             pass
 
-    # get page err, if possible
-    def res_get_err(self):
+    # drama info details handler
+    def _get(self) -> None:
+        self._get_main_container()
+        self._get_details(classname="list m-a-0 hidden-md-up")
+        self._get_other_info()
+
+
+class FetchPerson(BaseFetch):
+    non_actors = ["screenwriter", "director", "screenwriter & director"]
+
+    def __init__(self, soup: BeautifulSoup, query: str, code: int, ok: bool) -> None:
+        super().__init__(soup, query, code, ok)
+
+    def _get_main_container(self) -> None:
         container = self.soup.find("div", class_="app-body")
 
-        # if the page was not found,
-        # or there was a problem with scraping,
-        # try to get the error and return the err message
-        err = {}
+        # append scraped data
+        # these are the most important drama infos / details
 
-        try:
-            err["status"] = "404 Not Found"
-            err["status_code"] = self.status_code
-            err["error"] = (
-                container.find("div", class_="box-body").find("h1").text
-            )
-            err["info"] = container.find("div", class_="box-body").find("p").text
-        except Exception:
-            pass
+        # NAME
+        self.info["name"] = container.find("h1", class_="film-title").text
 
-        return err
+        # ABOUT?
+        self.info["about"] = container.find(
+            "div", class_="col-sm-8 col-lg-12 col-md-12"
+        ).text.strip()
 
-    # drama info details handler
-    def get_drama(self):
-        try:
-            # scrape each
-            self.get_main_container()
-            self.get_details()
-            self.get_other_info()
+        # IMAGE
+        self.info["profile"] = self._get_poster(container)
 
-        except Exception:
-            # there was a problem with one of
-            # the functions above
-            return False
+        # WORKS
+        self.info["works"] = {}
 
-        # return the compiled
-        return True
+        # container
+        _works_container = container.find("div", class_="col-lg-8 col-md-8").find_all(
+            "div", class_="box-body"
+        )[1]
+
+        # get all headers
+        _work_headers = [
+            i.text.strip().lower() for i in _works_container.find_all("h5")
+        ]
+        _work_tables = _works_container.find_all("table")
+
+        for j, k in zip(_work_headers, _work_tables):
+            # theaders = ['episodes' if i.text.strip() == '#' else i.text.strip() for i in k.find("thead").find_all("th")]
+            bare_works: List[Dict[str, Any]] = []
+
+            for i in k.find("tbody").find_all("tr"):
+                _raw_year = i.find("td", class_="year").text
+                _raw_title = i.find("td", class_="title").find("a")
+
+                r = {
+                    "_slug": i["class"][0],
+                    "year": _raw_year if _raw_year == "TBA" else int(_raw_year),
+                    "title": {
+                        "link": urljoin(MYDRAMALIST_WEBSITE, _raw_title["href"]),
+                        "name": _raw_title.text,
+                    },
+                    "rating": float(
+                        i.find("td", class_="text-center").find(class_="text-sm").text
+                    ),
+                }
+
+                _raw_role = i.find("td", class_="role")
+
+                # applicable only on dramas / tv-shows (this is different for non-actors)
+                try:
+                    _raw_role_name = _raw_role.find("div", class_="name").text.strip()
+                except Exception:
+                    _raw_role_name = None
+
+                # use `type` for non-dramas, etc while `role` otherwise
+                try:
+                    if j in FetchPerson.non_actors:
+                        r["type"] = _raw_role.find(class_="roleid").text.strip()
+                    else:
+                        r["role"] = {
+                            "name": _raw_role_name,
+                            "id": _raw_role.find("div", class_="roleid").text.strip(),
+                        }
+                except Exception:
+                    pass
+
+                # not applicable for movies
+                try:
+                    episodes = i.find("td", class_="episodes").text
+                    r["episodes"] = int(episodes)
+                except Exception:
+                    pass
+
+                bare_works.append(r)
+
+            self.info["works"][j] = bare_works
+
+    def _get(self) -> None:
+        self._get_main_container()
+        self._get_details(classname="list m-b-0")
