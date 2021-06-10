@@ -95,12 +95,12 @@ class BaseSearch(Parser):
     def __init__(self, soup: BeautifulSoup, query: str, code: int, ok: bool) -> None:
         super().__init__(soup, query, code, ok)
 
-        self.search_dramas_output: List = []  # search
+        self.search_results: Dict[str, List] = {}  # search
 
     def search(self) -> Dict[str, Any]:
         return {
             "query": self.query,
-            "results": self.search_dramas_output,
+            "results": self.search_results,
             "scrapte_date": datetime.utcnow(),
         }
 

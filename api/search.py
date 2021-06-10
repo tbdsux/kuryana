@@ -1,11 +1,11 @@
 from __future__ import annotations
-from typing import List, Any, Tuple
+from typing import Any, Tuple
 
 from api import MYDRAMALIST_WEBSITE
 from api.parser import BaseSearch
 
 from bs4 import BeautifulSoup
-from bs4.element import Tag, NavigableString
+from bs4.element import Tag, NavigableString, ResultSet
 from urllib.parse import urljoin
 
 
@@ -18,21 +18,10 @@ class Search(BaseSearch):
         self.mdl_container_id = "mdl-"
 
     # get the main html container for the each search results
-    def _get_container(self) -> List:
-        boxes = self.soup.find("div", class_="col-lg-8 col-md-8").find_all(
+    def _get_container(self) -> ResultSet:
+        return self.soup.find("div", class_="col-lg-8 col-md-8").find_all(
             "div", class_="box"
         )
-
-        raw = []
-        for i in boxes:
-            try:
-                if i["id"].startswith(self.mdl_container_id):
-                    raw.append(i)
-            except Exception:
-                pass  # do nothing with other search results
-
-        # return the raw search results
-        return raw
 
     # get the search result ranking
     def _res_get_ranking(self, result_container: BeautifulSoup) -> Any:
@@ -88,25 +77,37 @@ class Search(BaseSearch):
     def _get_search_results(self) -> None:
         results = self._get_container()  # get the search results
 
+        _dramas = []
+        _people = []
+
         for result in results:
-            drama = {}
-            drama["mdl_id"] = result["id"]
+            r = {}
 
-            # extract drama title
             title = result.find("h6", class_="text-primary title").find("a")
-            drama["title"] = title.text.replace("\n", "")
-            drama["slug"] = title["href"].replace("/", "")
 
-            # drama ranking
-            drama["ranking"] = self._res_get_ranking(result)
-
-            # specific drama info
-            drama["type"], drama["year"], drama["series"] = self._res_get_year_info(
-                result
-            )
-
+            r["slug"] = title["href"].replace("/", "", 1)
             # get the thumbnail
-            drama["thumb"] = result.find("img", class_="img-responsive")["data-src"]
+            r["thumb"] = result.find("img", class_="img-responsive")["data-src"]
 
-            # append each
-            self.search_dramas_output.append(drama)
+            if result.has_attr("id"):
+                r["mdl_id"] = result["id"]
+
+                # extract drama title
+                r["title"] = title.text.strip()
+
+                # drama ranking
+                r["ranking"] = self._res_get_ranking(result)
+
+                # specific drama info
+                r["type"], r["year"], r["series"] = self._res_get_year_info(result)
+
+                _dramas.append(r)
+                continue
+
+            # it can only be a person otherwise,
+            r["name"] = title.text.strip()
+            r["nationality"] = result.find("div", class_="text-muted").text.strip()
+            _people.append(r)
+
+        self.search_results["dramas"] = _dramas
+        self.search_results["people"] = _people
