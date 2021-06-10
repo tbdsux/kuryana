@@ -1,15 +1,24 @@
-from api.parser import Parser
+from __future__ import annotations
+from typing import List, Any, Tuple
 
+from api import MYDRAMALIST_WEBSITE
+from api.parser import BaseSearch
+
+from bs4 import BeautifulSoup
+from bs4.element import Tag, NavigableString
+from urllib.parse import urljoin
 
 # TBU -> for searching dramas
-class Search(Parser):
-    def __init__(self, query) -> None:
-        super().__init__(query)
+class Search(BaseSearch):
+    def __init__(self, soup: BeautifulSoup, query: str, code: int, ok: bool) -> None:
+        super().__init__(soup, query, code, ok)
         self.url = "search?q=" + self.query.replace(" ", "+")
         self.mdl_container_id = "mdl-"
 
+        self._get_search_results()
+
     # get the main html container for the each search results
-    def get_container(self):
+    def _get_container(self) -> List:
         boxes = self.soup.find("div", class_="col-lg-8 col-md-8").find_all(
             "div", class_="box"
         )
@@ -26,7 +35,7 @@ class Search(Parser):
         return raw
 
     # get the search result ranking
-    def res_get_ranking(self, result_container):
+    def _res_get_ranking(self, result_container: BeautifulSoup) -> Any:
         try:
             ranking = result_container.find("div", class_="ranking pull-right").find(
                 "span"
@@ -37,16 +46,20 @@ class Search(Parser):
         return ranking.text
 
     # get the year info of the result
-    def res_get_year_info(self, result_container):
+    def _res_get_year_info(
+        self, result_container: NavigableString | Tag
+    ) -> Tuple[str | None, int | None, str | bool]:
         # extract the type and year
         _typeyear = result_container.find("span", class_="text-muted").text
         _year_eps = _typeyear.split("-")[1]
 
+        year: int | None = None  # type error below
+
         # get the drama type [movie / series]
         try:
-            type = _typeyear.split("-")[0].strip()
+            t = _typeyear.split("-")[0].strip()
         except Exception:
-            type = None
+            t = None
 
         # get the year
         try:
@@ -60,17 +73,20 @@ class Search(Parser):
         except Exception:
             series_ep = False
 
-        return type, year, series_ep
+        return t, year, series_ep
 
     # extract the urls of the search result
-    def res_get_url(self, result_container):
-        return self.website + result_container.find(
-            "h6", class_="text-primary title"
-        ).find("a")["href"].replace("/", "")
+    def _res_get_url(self, result_container: Tag | NavigableString) -> str:
+        return urljoin(
+            MYDRAMALIST_WEBSITE,
+            result_container.find("h6", class_="text-primary title")
+            .find("a")["href"]
+            .replace("/", ""),
+        )
 
     # search results handler
-    def get_search_results(self):
-        results = self.get_container()  # get the search results
+    def _get_search_results(self) -> None:
+        results = self._get_container()  # get the search results
 
         for result in results:
             drama = {}
@@ -82,10 +98,10 @@ class Search(Parser):
             drama["slug"] = title["href"].replace("/", "")
 
             # drama ranking
-            drama["ranking"] = self.res_get_ranking(result)
+            drama["ranking"] = self._res_get_ranking(result)
 
             # specific drama info
-            drama["type"], drama["year"], drama["series"] = self.res_get_year_info(
+            drama["type"], drama["year"], drama["series"] = self._res_get_year_info(
                 result
             )
 
@@ -94,6 +110,3 @@ class Search(Parser):
 
             # append each
             self.search_dramas_output.append(drama)
-
-        # return true after appending each search result
-        return True
