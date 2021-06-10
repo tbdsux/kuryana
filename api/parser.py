@@ -11,7 +11,6 @@ from bs4 import BeautifulSoup
 from bs4.element import NavigableString, Tag
 from datetime import datetime
 from urllib.parse import urljoin
-from fastapi import status
 
 
 T = TypeVar("T", bound="Parser")
@@ -22,8 +21,10 @@ ScrapeTypes = {
     "page": MYDRAMALIST_WEBSITE,
 }
 
-# MAIN Parser class
+
 class Parser:
+    """Main Parser"""
+
     headers: Dict[str, str] = {
         "Referer": MYDRAMALIST_WEBSITE,
         "User-Agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.123 Mobile Safari/537.36",
@@ -37,7 +38,7 @@ class Parser:
 
     @classmethod
     async def scrape(cls: Type[T], query: str, t: str) -> T:
-        if not t in ScrapeTypes.keys():
+        if t not in ScrapeTypes.keys():
             raise Exception("Invalid type")
 
         # parse url

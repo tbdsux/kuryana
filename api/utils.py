@@ -29,9 +29,10 @@ async def search_func(query: str) -> Tuple[int, Dict[str, Any]]:
 
 fs = {"drama": FetchDrama, "person": FetchPerson}
 
+
 # fetch function
 async def fetch_func(query: str, t: str) -> Tuple[int, Dict[str, Any]]:
-    if not t in fs.keys():
+    if t not in fs.keys():
         raise Exception("Invalid Error")
 
     f = await fs[t].scrape(query=query, t="page")

@@ -8,8 +8,10 @@ from bs4 import BeautifulSoup
 from bs4.element import Tag, NavigableString
 from urllib.parse import urljoin
 
-# TBU -> for searching dramas
+
 class Search(BaseSearch):
+    """Search"""
+
     def __init__(self, soup: BeautifulSoup, query: str, code: int, ok: bool) -> None:
         super().__init__(soup, query, code, ok)
         self.url = "search?q=" + self.query.replace(" ", "+")

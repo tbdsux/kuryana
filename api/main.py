@@ -1,12 +1,12 @@
 from typing import Dict, Any
 
-from fastapi import FastAPI, Response, status
-
-
-from api.utils import search_func, fetch_func
+from fastapi import FastAPI, Response
 
 # bypassing cloudflare anti-bot
 import cloudscraper
+
+from api.utils import search_func, fetch_func
+
 
 app = FastAPI()
 

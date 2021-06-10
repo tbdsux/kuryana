@@ -83,7 +83,6 @@ class FetchPerson(BaseFetch):
     def __init__(self, soup: BeautifulSoup, query: str, code: int, ok: bool) -> None:
         super().__init__(soup, query, code, ok)
 
-
     def _get_main_container(self) -> None:
         container = self.soup.find("div", class_="app-body")
 
