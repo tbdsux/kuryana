@@ -1,5 +1,4 @@
-from __future__ import annotations
-from typing import Any, Tuple
+from typing import Any, Tuple, Union, Optional
 
 from api import MYDRAMALIST_WEBSITE
 from api.parser import BaseSearch
@@ -36,13 +35,13 @@ class Search(BaseSearch):
 
     # get the year info of the result
     def _res_get_year_info(
-        self, result_container: NavigableString | Tag
-    ) -> Tuple[str | None, int | None, str | bool]:
+        self, result_container: Union[NavigableString, Tag]
+    ) -> Tuple[Union[str, None], Union[int, None], Union[str, bool]]:
         # extract the type and year
         _typeyear = result_container.find("span", class_="text-muted").text
         _year_eps = _typeyear.split("-")[1]
 
-        year: int | None = None  # type error below
+        year: Optional[int] = None  # type error below
 
         # get the drama type [movie / series]
         try:
@@ -65,7 +64,7 @@ class Search(BaseSearch):
         return t, year, series_ep
 
     # extract the urls of the search result
-    def _res_get_url(self, result_container: Tag | NavigableString) -> str:
+    def _res_get_url(self, result_container: Union[Tag, NavigableString]) -> str:
         return urljoin(
             MYDRAMALIST_WEBSITE,
             result_container.find("h6", class_="text-primary title")

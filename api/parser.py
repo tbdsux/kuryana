@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-from typing import Dict, List, Any, Tuple, Type, TypeVar
+from typing import Dict, List, Any, Tuple, Type, TypeVar, Union
 
 from api import MYDRAMALIST_WEBSITE
 
@@ -122,7 +120,7 @@ class BaseFetch(Parser):
     def _get(self) -> None:
         """handler for parser, override in subclass"""
 
-    def _get_poster(self, container: Tag | NavigableString) -> str | Any:
+    def _get_poster(self, container: Union[Tag, NavigableString]) -> Union[str, Any]:
         poster = container.find("img", class_="img-responsive")
 
         for i in self._img_attrs:

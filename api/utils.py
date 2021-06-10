@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import Dict, Any, Tuple
 
 from api.search import Search
