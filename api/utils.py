@@ -1,7 +1,7 @@
 from typing import Dict, Any, Tuple
 
 from api.search import Search
-from api.fetch import FetchDrama, FetchPerson
+from api.fetch import FetchDrama, FetchPerson, FetchCast
 
 
 def error(code: int, description: str) -> Dict[str, Any]:
@@ -26,7 +26,7 @@ async def search_func(query: str) -> Tuple[int, Dict[str, Any]]:
     return code, f.search()
 
 
-fs = {"drama": FetchDrama, "person": FetchPerson}
+fs = {"drama": FetchDrama, "person": FetchPerson, "cast": FetchCast}
 
 
 # fetch function

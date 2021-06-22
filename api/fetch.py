@@ -173,3 +173,56 @@ class FetchPerson(BaseFetch):
     def _get(self) -> None:
         self._get_main_container()
         self._get_details(classname="list m-b-0")
+
+
+class FetchCast(BaseFetch):
+    def __init__(self, soup: BeautifulSoup, query: str, code: int, ok: bool) -> None:
+        super().__init__(soup, query, code, ok)
+
+    def _get_main_container(self) -> None:
+        container = self.soup.find("div", class_="app-body")
+
+        # append scraped data
+        # these are the most important drama infos / details
+
+        # TITLE
+        self.info["title"] = container.find("h1", class_="film-title").find("a").text
+
+        # POSTER
+        self.info["poster"] = self._get_poster(container)
+
+        # CASTS?
+        self.info["casts"] = {}
+        __casts_container = container.find("div", class_="box cast-credits").find(
+            "div", class_="box-body"
+        )
+
+        __temp_cast_headers = __casts_container.find_all("h3")
+        __temp_cast_lists = __casts_container.find_all("ul")
+
+        for j, k in zip(__temp_cast_headers, __temp_cast_lists):
+            casts = []
+            for i in k.find_all("li"):
+                __temp_cast = i.find("a", class_="text-primary")
+                __temp_cast_slug = __temp_cast["href"].strip()
+                __temp_cast_data = {
+                    "name": __temp_cast.find("b").text.strip(),
+                    "profile_image": self._get_poster(i),
+                    "slug": __temp_cast_slug,
+                    "link": urljoin(MYDRAMALIST_WEBSITE, __temp_cast_slug),
+                }
+
+                try:
+                    __temp_cast_data["role"] = {
+                        "name": i.find("small").text.strip(),
+                        "type": i.find("small", class_="text-muted").text.strip(),
+                    }
+                except Exception:
+                    pass
+
+                casts.append(__temp_cast_data)
+
+            self.info["casts"][j.text.strip()] = casts
+
+    def _get(self) -> None:
+        self._get_main_container()
