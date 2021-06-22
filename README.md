@@ -4,7 +4,9 @@ A simple MyDramaList.com scraper api.
 
 This scrapes on the go so it might be slow.
 
-#### Deploy Your Own
+#### THIS SERVICE IS ONLY CREATED TO SATISFY THE NEED FOR AN API FOR [MYDRAMALIST.COM](https://mydramalist.com). THIS WILL BE STOPPED ONCE AN OFFICIAL API WILL BE RELEASED.
+
+### Deploy Your Own
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/git/external?repository-url=https%3A%2F%2Fgithub.com%2FTheBoringDude%2Fkuryana)
 
@@ -20,6 +22,12 @@ https://kuryana.vercel.app/search/q/{yourquery}
 
 ```
 https://kuryana.vercel.app/id/{mydramalist-slug}
+```
+
+- [Get DRAMA Cast](https://kuryana.vercel.app/id/{id}/cast)
+
+```
+https://kuryana.vercel.app/id/{mydramalist-slug}/cast
 ```
 
 - [Get Person(People) Info](https://kuryana.vercel.app/people/)
