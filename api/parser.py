@@ -107,7 +107,10 @@ class BaseFetch(Parser):
     def __init__(self, soup: BeautifulSoup, query: str, code: int, ok: bool) -> None:
         super().__init__(soup, query, code, ok)
 
-        self.info: Dict[str, Any] = {}  # fetch
+        self.info: Dict[str, Any] = {
+            "link": urljoin(MYDRAMALIST_WEBSITE, query)  # add `link` first data
+        }  # fetch
+
         self._img_attrs = ["src", "data-cfsrc", "data-src"]
 
     def fetch(self) -> Dict[str, Any]:

@@ -41,10 +41,13 @@ class FetchDrama(BaseFetch):
         casts = []
         for i in __casts:
             __temp_cast = i.find("a", class_="text-primary text-ellipsis")
+            __temp_cast_slug = __temp_cast["href"].strip()
             casts.append(
                 {
                     "name": __temp_cast.find("b").text.strip(),
-                    "slug": __temp_cast["href"].strip(),
+                    "profile_image": self._get_poster(i),
+                    "slug": __temp_cast_slug,
+                    "link": urljoin(MYDRAMALIST_WEBSITE, __temp_cast_slug),
                 }
             )
         self.info["casts"] = casts
