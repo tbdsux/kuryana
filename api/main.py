@@ -40,6 +40,14 @@ async def fetch_cast(drama_id: str, response: Response) -> Dict[str, Any]:
     return r
 
 
+@app.get("/id/{drama_id}/reviews")
+async def fetch_reviews(drama_id: str, response: Response) -> Dict[str, Any]:
+    code, r = await fetch_func(query=f"{drama_id}/reviews", t="reviews")
+
+    response.status_code = code
+    return r
+
+
 @app.get("/people/{person_id}")
 async def person(person_id: str, response: Response) -> Dict[str, Any]:
     code, r = await fetch_func(query=f"people/{person_id}", t="person")

@@ -124,7 +124,7 @@ class BaseFetch(Parser):
         """handler for parser, override in subclass"""
 
     def _get_poster(self, container: Union[Tag, NavigableString]) -> Union[str, Any]:
-        poster = container.find("img", class_="img-responsive")
+        poster = container.find("img")
 
         for i in self._img_attrs:
             if poster.has_attr(i):

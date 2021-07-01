@@ -5,6 +5,7 @@ from api.parser import BaseFetch
 
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+import re
 
 
 class FetchDrama(BaseFetch):
@@ -223,6 +224,78 @@ class FetchCast(BaseFetch):
                 casts.append(__temp_cast_data)
 
             self.info["casts"][j.text.strip()] = casts
+
+    def _get(self) -> None:
+        self._get_main_container()
+
+
+class FetchReviews(BaseFetch):
+    def __init__(self, soup: BeautifulSoup, query: str, code: int, ok: bool) -> None:
+        super().__init__(soup, query, code, ok)
+
+    def _get_main_container(self) -> None:
+        container = self.soup.find("div", class_="app-body")
+
+        # append scraped data
+        # these are the most important drama infos / details
+
+        # TITLE
+        self.info["title"] = container.find("h1", class_="film-title").find("a").text
+
+        # POSTER
+        self.info["poster"] = self._get_poster(container)
+
+        # REVIEWS?
+        self.info["reviews"] = []
+        __temp_reviews = container.find_all("div", class_="review")
+
+        for i in __temp_reviews:
+            __temp_review = {}
+
+            try:
+                # reviewer / person
+                __temp_review["reviewer"] = {
+                    "name": i.find("a").text.strip(),
+                    "user_link": urljoin(MYDRAMALIST_WEBSITE, i.find("a")["href"]),
+                    "user_image": self._get_poster(i),
+                    "info": i.find("div", class_="user-stats").text.strip(),
+                }
+
+                __temp_review_ratings = i.find(
+                    "div", class_="box pull-right text-sm m-a-sm"
+                )
+                __temp_review_ratings_overall = __temp_review_ratings.find(
+                    "div", class_="rating-overall"
+                )
+
+                __temp_review["review"] = (
+                    i.find("div", class_=re.compile("review-body"))
+                    .text.replace(__temp_review_ratings.text.strip(), "")
+                    .strip()
+                )
+
+                __temp_review["ratings"] = {
+                    "overall": float(
+                        __temp_review_ratings_overall.find("span").text.strip()
+                    )
+                }
+                __temp_review_ratings_others = __temp_review_ratings.find(
+                    "div", class_="review-rating"
+                ).find_all("div")
+
+                # other review ratings, it might be different in each box?
+                for k in __temp_review_ratings_others:
+                    __temp_review["ratings"][
+                        k.text.replace(k.find("span").text.strip(), "").strip()
+                    ] = float(k.find("span").text.strip())
+
+            except Exception as e:
+                print(e)
+                # if failed to parse, do nothing
+                pass
+
+            # append to list
+            self.info["reviews"].append(__temp_review)
 
     def _get(self) -> None:
         self._get_main_container()
