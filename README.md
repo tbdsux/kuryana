@@ -1,14 +1,16 @@
-# kuryana
+<div align="center">
+  <h1>kuryana</h1>
 
-A simple MyDramaList.com scraper api.
+  <p>A simple MyDramaList.com scraper api.</p>
+  <p>This scrapes on the go so it might be slow.</p>
 
-This scrapes on the go so it might be slow.
-
-#### THIS SERVICE IS ONLY CREATED TO SATISFY THE NEED FOR AN API FOR [MYDRAMALIST.COM](https://mydramalist.com). THIS WILL BE STOPPED ONCE AN OFFICIAL API WILL BE RELEASED.
+  <h4>THIS SERVICE IS ONLY CREATED TO SATISFY THE NEED FOR AN API FOR [MYDRAMALIST.COM](https://mydramalist.com). THIS WILL BE STOPPED ONCE AN OFFICIAL API WILL BE RELEASED.</h4>
 
 ### Deploy Your Own
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/git/external?repository-url=https%3A%2F%2Fgithub.com%2FTheBoringDude%2Fkuryana)
+
+</div>
 
 ## API Use
 
@@ -28,6 +30,12 @@ https://kuryana.vercel.app/id/{mydramalist-slug}
 
 ```
 https://kuryana.vercel.app/id/{mydramalist-slug}/cast
+```
+
+- [Get DRAMA Reviews](https://kuryana.vercel.app/id/{id}/reviews)
+
+```
+https://kuryana.vercel.app/id/{mydramalist-slug}/reviews
 ```
 
 - [Get Person(People) Info](https://kuryana.vercel.app/people/)
