@@ -99,9 +99,12 @@ class FetchPerson(BaseFetch):
         self.info["name"] = container.find("h1", class_="film-title").text
 
         # ABOUT?
-        self.info["about"] = container.find(
+        __temp_about = container.find("div", class_="col-lg-8 col-md-8").find(
             "div", class_="col-sm-8 col-lg-12 col-md-12"
-        ).text.strip()
+        )
+        self.info["about"] = __temp_about.text.replace(
+            __temp_about.find("div", class_="hidden-md-up").text.strip(), ""
+        ).strip()
 
         # IMAGE
         self.info["profile"] = self._get_poster(container)
