@@ -155,3 +155,14 @@ class BaseFetch(Parser):
         except Exception:
             # do nothing, if there was a problem
             pass
+
+    # rating handler, (since it could be N/A which is not convertable to float)
+    def _handle_rating(
+        self, component: Union[Tag, NavigableString]
+    ) -> Union[str, float, Any]:
+        try:
+            return float(component.text)
+        except Exception:
+            pass
+
+        return component.text

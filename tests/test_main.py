@@ -12,9 +12,19 @@ def test_index() -> None:
 
 
 def test_sample_drama() -> None:
-    response = client.get("/id/58953-mouse")  # real id
-    assert response.status_code == 200
-    assert response.json()["data"]["title"] == "Mouse"
+    dramas = [
+        {
+            "id": "65743-alien-girl-chai-xiao-qi-2",
+            "title": "My Girlfriend is an Alien 2",
+        },
+        {"id": "58953-mouse", "title": "Mouse"},
+    ]
+
+    for i in dramas:
+        r = client.get(f"/id/{i['id']}")
+
+        assert r.status_code == 200
+        assert r.json()["data"]["title"] == i["title"]
 
 
 def test_unknown_drama() -> None:

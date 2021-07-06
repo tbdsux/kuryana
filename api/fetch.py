@@ -22,10 +22,8 @@ class FetchDrama(BaseFetch):
         # TITLE
         self.info["title"] = container.find("h1", class_="film-title").find("a").text
 
-        # RATING
-        self.info["rating"] = float(
-            (container.find("div", class_="col-film-rating").find("div").text)
-        )
+        # RATING (could be either N/A or with number)
+        self.info["rating"] = self._handle_rating(container.find("div", class_="col-film-rating").find("div"))
 
         # POSTER
         self.info["poster"] = self._get_poster(container)
@@ -138,9 +136,7 @@ class FetchPerson(BaseFetch):
                         "link": urljoin(MYDRAMALIST_WEBSITE, _raw_title["href"]),
                         "name": _raw_title.text,
                     },
-                    "rating": float(
-                        i.find("td", class_="text-center").find(class_="text-sm").text
-                    ),
+                    "rating": self._handle_rating(i.find("td", class_="text-center").find(class_="text-sm"))
                 }
 
                 _raw_role = i.find("td", class_="role")
