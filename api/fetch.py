@@ -23,7 +23,9 @@ class FetchDrama(BaseFetch):
         self.info["title"] = container.find("h1", class_="film-title").find("a").text
 
         # RATING (could be either N/A or with number)
-        self.info["rating"] = self._handle_rating(container.find("div", class_="col-film-rating").find("div"))
+        self.info["rating"] = self._handle_rating(
+            container.find("div", class_="col-film-rating").find("div")
+        )
 
         # POSTER
         self.info["poster"] = self._get_poster(container)
@@ -136,7 +138,9 @@ class FetchPerson(BaseFetch):
                         "link": urljoin(MYDRAMALIST_WEBSITE, _raw_title["href"]),
                         "name": _raw_title.text,
                     },
-                    "rating": self._handle_rating(i.find("td", class_="text-center").find(class_="text-sm"))
+                    "rating": self._handle_rating(
+                        i.find("td", class_="text-center").find(class_="text-sm")
+                    ),
                 }
 
                 _raw_role = i.find("td", class_="role")
@@ -256,7 +260,9 @@ class FetchReviews(BaseFetch):
                 __temp_review["reviewer"] = {
                     "name": i.find("a").text.strip(),
                     "user_link": urljoin(MYDRAMALIST_WEBSITE, i.find("a")["href"]),
-                    "user_image": self._get_poster(i),
+                    "user_image": self._get_poster(i).replace(
+                        "1t", "1c"
+                    ),  # replace 1t to 1c so that it will return a bigger image than the smaller one
                     "info": i.find("div", class_="user-stats").text.strip(),
                 }
 
@@ -267,11 +273,15 @@ class FetchReviews(BaseFetch):
                     "div", class_="rating-overall"
                 )
 
-                __temp_review["review"] = (
-                    i.find("div", class_=re.compile("review-body"))
-                    .text.replace(__temp_review_ratings.text.strip(), "")
-                    .strip()
+                __temp_review_container = i.find(
+                    "div", class_=re.compile("review-body")
                 )
+                for i in __temp_review_container.find_all("br"):
+                    i.replace_with("\n")
+
+                __temp_review["review"] = __temp_review_container.text.replace(
+                    __temp_review_ratings.text.strip(), ""
+                ).strip()
 
                 __temp_review["ratings"] = {
                     "overall": float(

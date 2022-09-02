@@ -15,7 +15,7 @@ def test_sample_drama() -> None:
     dramas = [
         {
             "id": "65743-alien-girl-chai-xiao-qi-2",
-            "title": "My Girlfriend is an Alien 2",
+            "title": "My Girlfriend Is an Alien 2",
         },
         {"id": "58953-mouse", "title": "Mouse"},
     ]
@@ -24,6 +24,9 @@ def test_sample_drama() -> None:
         r = client.get(f"/id/{i['id']}")
 
         assert r.status_code == 200
+
+        print(r.json()["data"])
+
         assert r.json()["data"]["title"] == i["title"]
 
 

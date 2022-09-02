@@ -11,5 +11,6 @@
     },
     "python.analysis.extraPaths": [
         "venv/lib"
-    ]
+    ],
+    "python.linting.mypyEnabled": true
 }

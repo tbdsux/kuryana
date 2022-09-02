@@ -17,13 +17,12 @@ def error(code: int, description: str) -> Dict[str, Any]:
 # search function
 async def search_func(query: str) -> Tuple[int, Dict[str, Any]]:
     f = await Search.scrape(query=query, t="search")
-    code, ok = f.check()
-    if not ok:
-        return code, error(code, "An unexpected error occurred.")
+    if not f.ok:
+        return f.status_code, error(f.status_code, "An unexpected error occurred.")
     else:
         f._get_search_results()
 
-    return code, f.search()
+    return f.status_code, f.search()
 
 
 fs = {
@@ -40,10 +39,9 @@ async def fetch_func(query: str, t: str) -> Tuple[int, Dict[str, Any]]:
         raise Exception("Invalid Error")
 
     f = await fs[t].scrape(query=query, t="page")
-    code, ok = f.check()
-    if not ok:
-        return code, error(code, "An unexpected error occurred.")
+    if not f.ok:
+        return f.status_code, error(f.status_code, "An unexpected error occurred.")
     else:
         f._get()
 
-    return code, f.fetch()
+    return f.status_code, f.fetch()
