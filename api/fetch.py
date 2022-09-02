@@ -253,7 +253,7 @@ class FetchReviews(BaseFetch):
         __temp_reviews = container.find_all("div", class_="review")
 
         for i in __temp_reviews:
-            __temp_review = {}
+            __temp_review: Dict[str, Any] = {}
 
             try:
                 # reviewer / person
@@ -273,15 +273,53 @@ class FetchReviews(BaseFetch):
                     "div", class_="rating-overall"
                 )
 
+                # start parsing the review section
+                __temp_review_contents = []
+
                 __temp_review_container = i.find(
                     "div", class_=re.compile("review-body")
                 )
+
+                __temp_review_spoiler = __temp_review_container.find(
+                    "div", "review-spoiler"
+                )
+                if __temp_review_spoiler is not None:
+                    __temp_review_contents.append(__temp_review_spoiler.text.strip())
+
+                __temp_review_strong = __temp_review_container.find("strong")
+                if __temp_review_strong is not None:
+                    __temp_review_contents.append(__temp_review_strong.text.strip())
+
+                __temp_review_read_more = __temp_review_container.find(
+                    "p", class_="read-more"
+                ).text.strip()
+                __temp_review_vote = __temp_review_container.find(
+                    "div", class_="review-helpful"
+                ).text.strip()
+
                 for i in __temp_review_container.find_all("br"):
                     i.replace_with("\n")
 
-                __temp_review["review"] = __temp_review_container.text.replace(
-                    __temp_review_ratings.text.strip(), ""
-                ).strip()
+                __temp_review_content = (
+                    __temp_review_container.text.replace(
+                        __temp_review_ratings.text.strip(), ""
+                    )
+                    .replace(__temp_review_read_more, "")
+                    .replace(__temp_review_vote, "")
+                )
+
+                if __temp_review_spoiler is not None:
+                    __temp_review_content = __temp_review_content.replace(
+                        __temp_review_spoiler.text.strip(), ""
+                    )
+                if __temp_review_strong is not None:
+                    __temp_review_content = __temp_review_content.replace(
+                        __temp_review_strong.text.strip(), ""
+                    )
+
+                __temp_review_contents.append(__temp_review_content.strip())
+                __temp_review["review"] = __temp_review_contents
+                # end parsing the review section
 
                 __temp_review["ratings"] = {
                     "overall": float(
