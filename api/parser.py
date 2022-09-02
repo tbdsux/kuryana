@@ -54,7 +54,7 @@ class Parser:
             resp = scraper.get(url, headers=Parser.headers)
 
             # set the main soup var
-            soup = BeautifulSoup(resp.text, "html5lib")
+            soup = BeautifulSoup(resp.text, "lxml")
 
             # set the status code
             code = resp.status_code
