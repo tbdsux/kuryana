@@ -1,4 +1,4 @@
-from typing import Dict, List, Any, Tuple, Type, TypeVar, Union
+from typing import Dict, List, Any, Type, TypeVar, Union
 
 from api import MYDRAMALIST_WEBSITE
 
@@ -32,7 +32,7 @@ class Parser:
         self.soup = soup
         self.query = query
         self.status_code = code
-        self.url = ""
+        self.ok = ok
 
     @classmethod
     async def scrape(cls: Type[T], query: str, t: str) -> T:
@@ -45,7 +45,7 @@ class Parser:
             url = ScrapeTypes[t] + query
 
         ok = True
-        code = 0
+        code = 500  # default to 500, internal server error
         soup = None
 
         try:
@@ -58,17 +58,12 @@ class Parser:
 
             # set the status code
             code = resp.status_code
+            ok = resp.status_code == 200
+
         except Exception:
             ok = False
 
         return cls(soup, query, code, ok)
-
-    def check(self) -> Tuple[int, bool]:
-        """Checks the status_code and returns it."""
-        if self.status_code == 200:
-            return 200, True
-
-        return self.status_code, False
 
     # get page err, if possible
     def res_get_err(self) -> Dict[str, Any]:

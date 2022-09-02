@@ -23,7 +23,9 @@ class FetchDrama(BaseFetch):
         self.info["title"] = container.find("h1", class_="film-title").find("a").text
 
         # RATING (could be either N/A or with number)
-        self.info["rating"] = self._handle_rating(container.find("div", class_="col-film-rating").find("div"))
+        self.info["rating"] = self._handle_rating(
+            container.find("div", class_="col-film-rating").find("div")
+        )
 
         # POSTER
         self.info["poster"] = self._get_poster(container)
@@ -65,9 +67,10 @@ class FetchDrama(BaseFetch):
                 _title = i.find("b").text.strip()
                 self.info["others"][
                     _title.replace(":", "").replace(" ", "_").lower()
-                ] = i.text.replace(
-                    _title + " ", ""
-                ).strip()  # remove leading and trailing white spaces
+                ] = [
+                    i.strip()
+                    for i in i.text.replace(_title + " ", "").strip().split(", ")
+                ]
 
         except Exception:
             # there was a problem while trying to parse
@@ -116,9 +119,7 @@ class FetchPerson(BaseFetch):
         )[1]
 
         # get all headers
-        _work_headers = [
-            i.text.strip().lower() for i in _works_container.find_all("h5")
-        ]
+        _work_headers = [i.text.strip() for i in _works_container.find_all("h5")]
         _work_tables = _works_container.find_all("table")
 
         for j, k in zip(_work_headers, _work_tables):
@@ -136,7 +137,9 @@ class FetchPerson(BaseFetch):
                         "link": urljoin(MYDRAMALIST_WEBSITE, _raw_title["href"]),
                         "name": _raw_title.text,
                     },
-                    "rating": self._handle_rating(i.find("td", class_="text-center").find(class_="text-sm"))
+                    "rating": self._handle_rating(
+                        i.find("td", class_="text-center").find(class_="text-sm")
+                    ),
                 }
 
                 _raw_role = i.find("td", class_="role")
@@ -154,7 +157,7 @@ class FetchPerson(BaseFetch):
                     else:
                         r["role"] = {
                             "name": _raw_role_name,
-                            "id": _raw_role.find("div", class_="roleid").text.strip(),
+                            "type": _raw_role.find("div", class_="roleid").text.strip(),
                         }
                 except Exception:
                     pass
@@ -207,7 +210,9 @@ class FetchCast(BaseFetch):
                 __temp_cast_slug = __temp_cast["href"].strip()
                 __temp_cast_data = {
                     "name": __temp_cast.find("b").text.strip(),
-                    "profile_image": self._get_poster(i),
+                    "profile_image": self._get_poster(i).replace(
+                        "s.jpg", "m.jpg"
+                    ),  # replaces the small images to a link with a bigger one
                     "slug": __temp_cast_slug,
                     "link": urljoin(MYDRAMALIST_WEBSITE, __temp_cast_slug),
                 }
@@ -249,14 +254,16 @@ class FetchReviews(BaseFetch):
         __temp_reviews = container.find_all("div", class_="review")
 
         for i in __temp_reviews:
-            __temp_review = {}
+            __temp_review: Dict[str, Any] = {}
 
             try:
                 # reviewer / person
                 __temp_review["reviewer"] = {
                     "name": i.find("a").text.strip(),
                     "user_link": urljoin(MYDRAMALIST_WEBSITE, i.find("a")["href"]),
-                    "user_image": self._get_poster(i),
+                    "user_image": self._get_poster(i).replace(
+                        "1t", "1c"
+                    ),  # replace 1t to 1c so that it will return a bigger image than the smaller one
                     "info": i.find("div", class_="user-stats").text.strip(),
                 }
 
@@ -267,11 +274,53 @@ class FetchReviews(BaseFetch):
                     "div", class_="rating-overall"
                 )
 
-                __temp_review["review"] = (
-                    i.find("div", class_=re.compile("review-body"))
-                    .text.replace(__temp_review_ratings.text.strip(), "")
-                    .strip()
+                # start parsing the review section
+                __temp_review_contents = []
+
+                __temp_review_container = i.find(
+                    "div", class_=re.compile("review-body")
                 )
+
+                __temp_review_spoiler = __temp_review_container.find(
+                    "div", "review-spoiler"
+                )
+                if __temp_review_spoiler is not None:
+                    __temp_review_contents.append(__temp_review_spoiler.text.strip())
+
+                __temp_review_strong = __temp_review_container.find("strong")
+                if __temp_review_strong is not None:
+                    __temp_review_contents.append(__temp_review_strong.text.strip())
+
+                __temp_review_read_more = __temp_review_container.find(
+                    "p", class_="read-more"
+                ).text.strip()
+                __temp_review_vote = __temp_review_container.find(
+                    "div", class_="review-helpful"
+                ).text.strip()
+
+                for i in __temp_review_container.find_all("br"):
+                    i.replace_with("\n")
+
+                __temp_review_content = (
+                    __temp_review_container.text.replace(
+                        __temp_review_ratings.text.strip(), ""
+                    )
+                    .replace(__temp_review_read_more, "")
+                    .replace(__temp_review_vote, "")
+                )
+
+                if __temp_review_spoiler is not None:
+                    __temp_review_content = __temp_review_content.replace(
+                        __temp_review_spoiler.text.strip(), ""
+                    )
+                if __temp_review_strong is not None:
+                    __temp_review_content = __temp_review_content.replace(
+                        __temp_review_strong.text.strip(), ""
+                    )
+
+                __temp_review_contents.append(__temp_review_content.strip())
+                __temp_review["review"] = __temp_review_contents
+                # end parsing the review section
 
                 __temp_review["ratings"] = {
                     "overall": float(
