@@ -67,9 +67,10 @@ class FetchDrama(BaseFetch):
                 _title = i.find("b").text.strip()
                 self.info["others"][
                     _title.replace(":", "").replace(" ", "_").lower()
-                ] = i.text.replace(
-                    _title + " ", ""
-                ).strip()  # remove leading and trailing white spaces
+                ] = [
+                    i.strip()
+                    for i in i.text.replace(_title + " ", "").strip().split(", ")
+                ]
 
         except Exception:
             # there was a problem while trying to parse
@@ -118,9 +119,7 @@ class FetchPerson(BaseFetch):
         )[1]
 
         # get all headers
-        _work_headers = [
-            i.text.strip().lower() for i in _works_container.find_all("h5")
-        ]
+        _work_headers = [i.text.strip() for i in _works_container.find_all("h5")]
         _work_tables = _works_container.find_all("table")
 
         for j, k in zip(_work_headers, _work_tables):
@@ -158,7 +157,7 @@ class FetchPerson(BaseFetch):
                     else:
                         r["role"] = {
                             "name": _raw_role_name,
-                            "id": _raw_role.find("div", class_="roleid").text.strip(),
+                            "type": _raw_role.find("div", class_="roleid").text.strip(),
                         }
                 except Exception:
                     pass
@@ -211,7 +210,9 @@ class FetchCast(BaseFetch):
                 __temp_cast_slug = __temp_cast["href"].strip()
                 __temp_cast_data = {
                     "name": __temp_cast.find("b").text.strip(),
-                    "profile_image": self._get_poster(i),
+                    "profile_image": self._get_poster(i).replace(
+                        "s.jpg", "m.jpg"
+                    ),  # replaces the small images to a link with a bigger one
                     "slug": __temp_cast_slug,
                     "link": urljoin(MYDRAMALIST_WEBSITE, __temp_cast_slug),
                 }
