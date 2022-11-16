@@ -1,6 +1,7 @@
 from typing import Dict, Any
 
 from fastapi import FastAPI, Response
+from fastapi.middleware.cors import CORSMiddleware
 
 # bypassing cloudflare anti-bot
 import cloudscraper
@@ -9,6 +10,15 @@ from api.utils import search_func, fetch_func
 
 
 app = FastAPI()
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")
