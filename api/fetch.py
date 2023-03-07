@@ -31,11 +31,8 @@ class FetchDrama(BaseFetch):
         self.info["poster"] = self._get_poster(container)
 
         # SYNOPSIS
-        self.info["synopsis"] = (
-            container.find("div", class_="show-synopsis")
-            .find("span")
-            .text.replace("\n", " ")
-        )
+        synopsis = container.find("div", class_="show-synopsis").find("span")
+        self.info["synopsis"] = synopsis.text.replace("\n", " ") if synopsis else ""
 
         # CASTS
         __casts = container.find_all("li", class_="list-item col-sm-4")
