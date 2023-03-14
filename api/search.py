@@ -80,11 +80,20 @@ class Search(BaseSearch):
         _people = []
 
         for result in results:
+            title_elem = result.find("h6", class_="text-primary title")
+            if title_elem is None:
+                continue  # skip if title is not found
+
             r = {}
+            title = title_elem.text.strip()
 
-            title = result.find("h6", class_="text-primary title").find("a")
+            # extract the URL slug
+            url_slug = title_elem.find("a").get("href")
+            if url_slug is not None:
+                r["slug"] = url_slug.replace("/", "", 1)
+            else:
+                continue  # skip this result if URL slug is not found
 
-            r["slug"] = title["href"].replace("/", "", 1)
             # get the thumbnail
             _thumb = str(result.find("img", class_="img-responsive")["data-src"]).split(
                 "/1280/"
@@ -98,8 +107,8 @@ class Search(BaseSearch):
                 r["mdl_id"] = result["id"]
 
                 # extract drama title
-                r["title"] = title.text.strip()
-
+                r["title"] = title.strip()
+                
                 # drama ranking
                 r["ranking"] = self._res_get_ranking(result)
 
@@ -110,7 +119,7 @@ class Search(BaseSearch):
                 continue
 
             # it can only be a person otherwise,
-            r["name"] = title.text.strip()
+            r["name"] = title.strip()
             r["nationality"] = result.find("div", class_="text-muted").text.strip()
             _people.append(r)
 
