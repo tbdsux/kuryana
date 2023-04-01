@@ -14,10 +14,13 @@ def test_index() -> None:
 def test_sample_drama() -> None:
     dramas = [
         {
-            "id": "65743-alien-girl-chai-xiao-qi-2",
-            "title": "My Girlfriend Is an Alien 2",
+            "id": "18452-goblin",
+            "expected": {"title": "Goblin", "complete_title": "Goblin (2016)"},
         },
-        {"id": "58953-mouse", "title": "Mouse"},
+        {
+            "id": "58953-mouse",
+            "expected": {"title": "Mouse", "complete_title": "Mouse (2021)"},
+        },
     ]
 
     for i in dramas:
@@ -27,7 +30,8 @@ def test_sample_drama() -> None:
 
         print(r.json()["data"])
 
-        assert r.json()["data"]["title"] == i["title"]
+        assert r.json()["data"]["title"] == i["expected"]["title"]
+        assert r.json()["data"]["complete_title"] == i["expected"]["complete_title"]
 
 
 def test_unknown_drama() -> None:

@@ -20,7 +20,12 @@ class FetchDrama(BaseFetch):
         # these are the most important drama infos / details
 
         # TITLE
-        self.info["title"] = container.find("h1", class_="film-title").find("a").text
+        # Example: Goblin (2016)
+        # Title = Goblin
+        # Complete Title = Goblin (2016)
+        film_title = container.find("h1", class_="film-title")
+        self.info["title"] = film_title.find("a").get_text().strip()
+        self.info["complete_title"] = film_title.get_text().strip()
 
         # RATING (could be either N/A or with number)
         self.info["rating"] = self._handle_rating(
