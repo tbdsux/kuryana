@@ -349,3 +349,83 @@ class FetchReviews(BaseFetch):
 
     def _get(self) -> None:
         self._get_main_container()
+
+
+class FetchList(BaseFetch):
+    def __init__(self, soup: BeautifulSoup, query: str, code: int, ok: bool) -> None:
+        super().__init__(soup, query, code, ok)
+
+    def _get_main_container(self) -> None:
+        container = self.soup.find("div", class_="app-body")
+
+        # get list title
+        header = container.find("div", class_="box-header")
+        self.info["title"] = header.find("h1").get_text().strip()
+
+        description = header.find("div", class_="description")
+        self.info["description"] = (
+            description.get_text().strip() if description is not None else ""
+        )
+
+        # get list
+        container_list = container.find("div", class_="collection-list")
+        all_items = container_list.find_all("li")
+        list_items = []
+        for i in all_items:
+            # parse list image
+            list_img_container = str(
+                i.find("img", class_="img-responsive")["data-src"]
+            ).split("/1280/")
+            list_img = ""
+            if len(list_img_container) > 1:
+                list_img = list_img_container[1]
+            else:
+                list_img = list_img_container[0]
+
+            list_img = list_img.replace("t.jpg", "c.jpg") # replace image url to give the bigger size
+
+            list_header = i.find("h2")
+            list_title = list_header.find("a").get_text().strip()
+            list_title_rank = (
+                list_header.get_text().replace(list_title, "").strip().strip(".")
+            )
+            list_url = urljoin(MYDRAMALIST_WEBSITE, list_header.find("a").get("href"))
+            list_slug = list_header.find("a").get("href")
+
+            # parse example: `Korean Drama - 2020, 16 episodes`
+            list_details_container = i.find(class_="text-muted") # could be `p` or `div`
+            list_details_xx = list_details_container.get_text().split(",")
+            list_details_type = list_details_xx[0].split("-")[0].strip()
+            list_details_year = list_details_xx[0].split("-")[1].strip()
+
+            list_details_episodes = None
+            if len(list_details_xx) > 1:
+                list_details_episodes = int(list_details_xx[1].replace("episodes", "").strip())
+
+
+            # try to get description, it is missing on some lists
+            list_short_summary = ""
+            list_short_summary_container = i.find("div", class_="col-xs-12 m-t-sm")
+            if list_short_summary_container is not None:
+                list_short_summary = list_short_summary_container.get_text().replace("...more", "...").strip()
+
+
+            # append to list items
+            list_items.append(
+                {
+                    "title": list_title,
+                    "image": list_img,
+                    "rank": list_title_rank,
+                    "url": list_url,
+                    "slug": list_slug,
+                    "type": list_details_type,
+                    "year": list_details_year,
+                    "episodes": list_details_episodes,
+                    "short_summary": list_short_summary
+                }
+            )
+
+        self.info["list"] = list_items
+
+    def _get(self) -> None:
+        self._get_main_container()
