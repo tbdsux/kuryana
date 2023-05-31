@@ -40,7 +40,10 @@ def test_unknown_drama() -> None:
     assert response.json() == {
         "error": True,
         "code": 404,
-        "description": "404 Not Found",
+        "description": {
+            "title": "The requested page was not found",
+            "info": "You can see this page because the URL you are accessing cannot be found.",
+        },
     }
 
 
@@ -56,7 +59,10 @@ def test_unknown_people() -> None:
     assert response.json() == {
         "error": True,
         "code": 404,
-        "description": "404 Not Found",
+        "description": {
+            "title": "The requested page was not found",
+            "info": "You can see this page because the URL you are accessing cannot be found.",
+        },
     }
 
 
