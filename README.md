@@ -50,18 +50,27 @@ https://kuryana.vercel.app/people/{people-id}
 https://kuryana.vercel.app/seasonal/{year}/{quarter}
 ```
 
+- [Get Lists](https://kuryana.vercel.app/list/)
+
+```
+https://kuryana.vercel.app/list/{id}
+```
+
 ## Development
 
 - Using the vercel CLI (`localhost:3000`)
+
   ```
   vercel dev
   ```
+
 - uvicorn (`localhost:8000`)
+
   ```
   uvicorn api.main --reload
   ```
 
-## NOTE:
+## NOTE
 
 All Requests and SCRAPED Datas are not cached by Vercel or the API itself.
 
