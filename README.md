@@ -56,6 +56,30 @@ https://kuryana.vercel.app/seasonal/{year}/{quarter}
 https://kuryana.vercel.app/list/{id}
 ```
 
+### Error Messages
+
+```js
+// mainly on all endpoints except `search`
+// sample: /list/unknown-random-id
+{
+  "code": 400,
+  "error": true,
+  "description": {
+    "title": "This list is private.",
+    "info": "You can see this page because the URL you are accessing cannot be found."
+  }
+}
+```
+
+```js
+// could also be this (only on `/search`) endpoint
+{
+  "error": true,
+  "code": 404,
+  "description": "404 Not Found"
+}
+```
+
 ## Development
 
 - Using the vercel CLI (`localhost:3000`)

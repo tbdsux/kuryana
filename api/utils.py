@@ -41,7 +41,7 @@ async def fetch_func(query: str, t: str) -> Tuple[int, Dict[str, Any]]:
 
     f = await fs[t].scrape(query=query, t="page")
     if not f.ok:
-        return f.status_code, error(f.status_code, "An unexpected error occurred.")
+        return f.status_code, f.res_get_err()
     else:
         f._get()
 

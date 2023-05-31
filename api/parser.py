@@ -75,9 +75,19 @@ class Parser:
         err: Dict[str, Any] = {}
 
         try:
-            err["status_code"] = self.status_code
-            err["error"] = container.find("div", class_="box-body").find("h1").text
-            err["info"] = container.find("div", class_="box-body").find("p").text
+            err["code"] = self.status_code
+            err["error"] = True
+            err["description"] = {
+                "title": container.find("div", class_="box-body")
+                .find("h1")
+                .get_text()
+                .strip(),
+                "info": container.find("div", class_="box-body")
+                .find("p")
+                .get_text()
+                .strip(),
+            }
+
         except Exception:
             pass
 
