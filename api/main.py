@@ -54,7 +54,6 @@ async def fetch_cast(drama_id: str, response: Response) -> Dict[str, Any]:
 async def fetch_reviews(
     drama_id: str, response: Response, page: int = 1
 ) -> Dict[str, Any]:
-
     code, r = await fetch_func(query=f"{drama_id}/reviews?page={page}", t="reviews")
 
     response.status_code = code
@@ -64,6 +63,14 @@ async def fetch_reviews(
 @app.get("/people/{person_id}")
 async def person(person_id: str, response: Response) -> Dict[str, Any]:
     code, r = await fetch_func(query=f"people/{person_id}", t="person")
+
+    response.status_code = code
+    return r
+
+
+@app.get("/list/{list_id}")
+async def lists(list_id: str, response: Response) -> Dict[str, Any]:
+    code, r = await fetch_func(query=f"list/{list_id}", t="lists")
 
     response.status_code = code
     return r
