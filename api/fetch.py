@@ -372,60 +372,107 @@ class FetchList(BaseFetch):
         all_items = container_list.find_all("li")
         list_items = []
         for i in all_items:
-            # parse list image
-            list_img_container = str(
-                i.find("img", class_="img-responsive")["data-src"]
-            ).split("/1280/")
-            list_img = ""
-            if len(list_img_container) > 1:
-                list_img = list_img_container[1]
-            else:
-                list_img = list_img_container[0]
+            i_url = i.find("a").get("href")
+            if "/people/" in i_url:
+                list_items.append(self._parse_person(i))
+                continue
 
-            list_img = list_img.replace("t.jpg", "c.jpg") # replace image url to give the bigger size
-
-            list_header = i.find("h2")
-            list_title = list_header.find("a").get_text().strip()
-            list_title_rank = (
-                list_header.get_text().replace(list_title, "").strip().strip(".")
-            )
-            list_url = urljoin(MYDRAMALIST_WEBSITE, list_header.find("a").get("href"))
-            list_slug = list_header.find("a").get("href")
-
-            # parse example: `Korean Drama - 2020, 16 episodes`
-            list_details_container = i.find(class_="text-muted") # could be `p` or `div`
-            list_details_xx = list_details_container.get_text().split(",")
-            list_details_type = list_details_xx[0].split("-")[0].strip()
-            list_details_year = list_details_xx[0].split("-")[1].strip()
-
-            list_details_episodes = None
-            if len(list_details_xx) > 1:
-                list_details_episodes = int(list_details_xx[1].replace("episodes", "").strip())
-
-
-            # try to get description, it is missing on some lists
-            list_short_summary = ""
-            list_short_summary_container = i.find("div", class_="col-xs-12 m-t-sm")
-            if list_short_summary_container is not None:
-                list_short_summary = list_short_summary_container.get_text().replace("...more", "...").strip()
-
-
-            # append to list items
-            list_items.append(
-                {
-                    "title": list_title,
-                    "image": list_img,
-                    "rank": list_title_rank,
-                    "url": list_url,
-                    "slug": list_slug,
-                    "type": list_details_type,
-                    "year": list_details_year,
-                    "episodes": list_details_episodes,
-                    "short_summary": list_short_summary
-                }
-            )
+            list_items.append(self._parse_show(i))
 
         self.info["list"] = list_items
+
+    def _parse_person(self, item: BeautifulSoup) -> Dict[str, Any]:
+        # parse person image
+        person_img_container = str(
+            item.find("img", class_="img-responsive")["data-src"]
+        ).split("/1280/")
+        person_img = ""
+        if len(person_img_container) > 1:
+            person_img = person_img_container[1]
+        else:
+            person_img = person_img_container[0]
+
+        person_img = person_img.replace(
+            "s.jpg", "m.jpg"
+        )  # replace image url to give the bigger size
+
+        item_header = item.find("div", class_="content")
+        person_name = item_header.find("a").get_text().strip()
+        person_slug = item_header.find("a").get("href")
+        person_url = urljoin(MYDRAMALIST_WEBSITE, person_slug)
+
+        person_nationality = item.find(class_="text-muted").get_text().strip()
+        person_details_xx = item.find_all("p")
+        person_details = ""
+        if len(person_details_xx) > 1:
+            person_details = person_details_xx[-1].get_text().strip()
+
+        return {
+            "name": person_name,
+            "type": "person",  # todo: change this
+            "image": person_img,
+            "slug": person_slug,
+            "url": person_url,
+            "nationality": person_nationality,
+            "details": person_details,
+        }
+
+    def _parse_show(self, item: BeautifulSoup) -> Dict[str, Any]:
+        # parse list image
+        list_img_container = str(
+            item.find("img", class_="img-responsive")["data-src"]
+        ).split("/1280/")
+        list_img = ""
+        if len(list_img_container) > 1:
+            list_img = list_img_container[1]
+        else:
+            list_img = list_img_container[0]
+
+        list_img = list_img.replace(
+            "t.jpg", "c.jpg"
+        )  # replace image url to give the bigger size
+
+        list_header = item.find("h2")
+        list_title = list_header.find("a").get_text().strip()
+        list_title_rank = (
+            list_header.get_text().replace(list_title, "").strip().strip(".")
+        )
+        list_url = urljoin(MYDRAMALIST_WEBSITE, list_header.find("a").get("href"))
+        list_slug = list_header.find("a").get("href")
+
+        # parse example: `Korean Drama - 2020, 16 episodes`
+        list_details_container = item.find(class_="text-muted")  # could be `p` or `div`
+        list_details_xx = list_details_container.get_text().split(",")
+        list_details_type = list_details_xx[0].split("-")[0].strip()
+        list_details_year = list_details_xx[0].split("-")[1].strip()
+
+        list_details_episodes = None
+        if len(list_details_xx) > 1:
+            list_details_episodes = int(
+                list_details_xx[1].replace("episodes", "").strip()
+            )
+
+        # try to get description, it is missing on some lists
+        list_short_summary = ""
+        list_short_summary_container = item.find("div", class_="col-xs-12 m-t-sm")
+        if list_short_summary_container is not None:
+            list_short_summary = (
+                list_short_summary_container.get_text()
+                .replace("...more", "...")
+                .strip()
+            )
+
+        return {
+            "title": list_title,
+            "image": list_img,
+            "rank": list_title_rank,
+            "url": list_url,
+            "slug": list_slug,
+            "type": list_details_type,
+            "year": list_details_year,
+            "episodes": list_details_episodes,
+            "short_summary": list_short_summary,
+        }
 
     def _get(self) -> None:
         self._get_main_container()
