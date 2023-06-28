@@ -1,15 +1,13 @@
-from typing import Dict, List, Any, Type, TypeVar, Union
-
-from api import MYDRAMALIST_WEBSITE
+from datetime import datetime
+from typing import Any, Dict, List, Type, TypeVar, Union
+from urllib.parse import urljoin
 
 # bypassing cloudflare anti-bot
 import cloudscraper
-
 from bs4 import BeautifulSoup
 from bs4.element import NavigableString, Tag
-from datetime import datetime
-from urllib.parse import urljoin
 
+from api import MYDRAMALIST_WEBSITE
 
 T = TypeVar("T", bound="Parser")
 
@@ -104,7 +102,7 @@ class BaseSearch(Parser):
         return {
             "query": self.query,
             "results": self.search_results,
-            "scrapte_date": datetime.utcnow(),
+            "scrape_date": datetime.utcnow(),
         }
 
 

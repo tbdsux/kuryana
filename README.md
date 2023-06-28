@@ -82,17 +82,39 @@ https://kuryana.vercel.app/list/{id}
 
 ## Development
 
+- Minimum Python Version : `3.9`,
+
+- Always make sure to create a virtualenvironment
+
+  ```sh
+  python -m venv venv
+  source ./venv/bin/activate.sh # change depends on your shell and os
+  ```
+
+- Install the dependencies
+  ```sh
+  pip install -r requirements.txt
+  ```
+
+### Dev Server
+
+You can start the development server in two ways:
+
 - Using the vercel CLI (`localhost:3000`)
 
-  ```
+  ```sh
   vercel dev
   ```
 
-- uvicorn (`localhost:8000`)
+  - The api will be `http://localhost:3000/api/*`
 
-  ```
+- Or with `uvicorn` (`localhost:8000`)
+
+  ```sh
   uvicorn api.main --reload
   ```
+
+  - The api will be `http://localhost:8000/*`
 
 ## NOTE
 
