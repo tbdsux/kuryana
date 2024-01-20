@@ -56,6 +56,12 @@ https://kuryana.vercel.app/seasonal/{year}/{quarter}
 https://kuryana.vercel.app/list/{id}
 ```
 
+- [Get User Dramalist](https://kuryana.vercel.app/dramalist/)
+
+```
+https://kuryana.vercel.app/dramalist/{user_id}
+```
+
 ### Error Messages
 
 ```js
