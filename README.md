@@ -111,7 +111,7 @@ You can start the development server in two ways:
 - Or with `uvicorn` (`localhost:8000`)
 
   ```sh
-  uvicorn api.main --reload
+  uvicorn api.main:app --reload
   ```
 
   - The api will be `http://localhost:8000/*`
