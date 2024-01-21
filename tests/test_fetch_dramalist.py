@@ -14,7 +14,6 @@ def sample_obj():
 
 def test_fetch_drama_list(sample_obj):
     sample_obj._get_main_container()
-    breakpoint()
     assert sample_obj.info == {
         "link": "https://mydramalist.com/query",
         "list": {
