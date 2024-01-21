@@ -68,6 +68,14 @@ async def person(person_id: str, response: Response) -> Dict[str, Any]:
     return r
 
 
+@app.get("/dramalist/{user_id}")
+async def dramalist(user_id: str, response: Response) -> Dict[str, Any]:
+    code, r = await fetch_func(query=f"dramalist/{user_id}", t="dramalist")
+
+    response.status_code = code
+    return r
+
+
 @app.get("/list/{list_id}")
 async def lists(list_id: str, response: Response) -> Dict[str, Any]:
     code, r = await fetch_func(query=f"list/{list_id}", t="lists")

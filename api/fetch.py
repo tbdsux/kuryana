@@ -37,7 +37,11 @@ class FetchDrama(BaseFetch):
 
         # SYNOPSIS
         synopsis = container.find("div", class_="show-synopsis").find("p")
-        self.info["synopsis"] = synopsis.get_text().replace("Edit Translation", "").strip() if synopsis else ""
+        self.info["synopsis"] = (
+            synopsis.get_text().replace("Edit Translation", "").strip()
+            if synopsis
+            else ""
+        )
 
         # CASTS
         __casts = container.find_all("li", class_="list-item col-sm-4")
@@ -346,6 +350,72 @@ class FetchReviews(BaseFetch):
 
             # append to list
             self.info["reviews"].append(__temp_review)
+
+    def _get(self) -> None:
+        self._get_main_container()
+
+
+class FetchDramaList(BaseFetch):
+    def __init__(self, soup: BeautifulSoup, query: str, code: int, ok: bool) -> None:
+        super().__init__(soup, query, code, ok)
+
+    def _get_main_container(self) -> None:
+        container = self.soup.find_all("div", class_="mdl-style-list")
+        titles = [self._parse_title(item) for item in container]
+        dramas = [self._parse_drama(item) for item in container]
+        stats = [self._parse_total_stats(item) for item in container]
+
+        items = dict()
+        for title, drama, stat in zip(titles, dramas, stats):
+            items[title] = {"items": drama, "stats": stat}
+
+        self.info["list"] = items
+
+    def _parse_title(self, item: BeautifulSoup) -> str:
+        return item.find("h3", class_="mdl-style-list-label").get_text(strip=True)
+
+    def _parse_total_stats(self, item: BeautifulSoup) -> Dict[str, str]:
+        drama_stats = item.find("label", class_="mdl-style-dramas")
+        tvshows_stats = item.find("label", class_="mdl-style-tvshows")
+        episodes_stats = item.find("label", class_="mdl-style-episodes")
+        movies_stats = item.find("label", class_="mdl-style-movies")
+        days_stats = item.find("label", class_="mdl-style-days")
+        return {
+            label.find("span", class_="name")
+            .get_text(strip=True): label.find("span", class_="cnt")
+            .get_text(strip=True)
+            for label in [
+                drama_stats,
+                tvshows_stats,
+                episodes_stats,
+                movies_stats,
+                days_stats,
+            ]
+        }
+
+    def _parse_drama(self, item: BeautifulSoup) -> Dict[str, str]:
+        item_names = item.find_all("a", class_="title")
+        item_scores = item.find_all("span", class_="score")
+        item_episode_seens = item.find_all("span", class_="episode-seen")
+        item_episode_totals = item.find_all("span", class_="episode-total")
+
+        parsed_data = []
+        for name, score, seen, total in zip(
+            item_names,
+            item_scores,
+            item_episode_seens,
+            item_episode_totals,
+        ):
+            parsed_item = {
+                "name": name.get_text(strip=True),
+                "id": name.get("href", "").split("/")[-1],
+                "score": score.get_text(strip=True),
+                "episode_seen": seen.get_text(strip=True),
+                "episode_total": total.get_text(strip=True),
+            }
+            parsed_data.append(parsed_item)
+
+        return parsed_data
 
     def _get(self) -> None:
         self._get_main_container()

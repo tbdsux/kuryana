@@ -56,6 +56,12 @@ https://kuryana.vercel.app/seasonal/{year}/{quarter}
 https://kuryana.vercel.app/list/{id}
 ```
 
+- [Get User Dramalist](https://kuryana.vercel.app/dramalist/)
+
+```
+https://kuryana.vercel.app/dramalist/{user_id}
+```
+
 ### Error Messages
 
 ```js
@@ -111,7 +117,7 @@ You can start the development server in two ways:
 - Or with `uvicorn` (`localhost:8000`)
 
   ```sh
-  uvicorn api.main --reload
+  uvicorn api.main:app --reload
   ```
 
   - The api will be `http://localhost:8000/*`
