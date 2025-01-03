@@ -1,8 +1,19 @@
-.vercel
-venv
-__pycache__/
-test.py
+# .env
 .env
+.env.local
+.env.production
+
+# rope
 .ropeproject
+
+# cache
 .mypy_cache
 .pytest_cache
+__pycache__/
+
+# vercel 
+.vercel
+
+# virtual environments 
+.venv
+venv 

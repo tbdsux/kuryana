@@ -1,11 +1,11 @@
-from typing import Any, Tuple, Union, Optional
-
-from api import MYDRAMALIST_WEBSITE
-from api.parser import BaseSearch
+from typing import Any, Optional, Tuple, Union
+from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
-from bs4.element import Tag, NavigableString, ResultSet
-from urllib.parse import urljoin
+from bs4.element import NavigableString, ResultSet, Tag
+
+from app import MYDRAMALIST_WEBSITE
+from app.handlers.parser import BaseSearch
 
 
 class Search(BaseSearch):
@@ -108,7 +108,7 @@ class Search(BaseSearch):
 
                 # extract drama title
                 r["title"] = title.strip()
-                
+
                 # drama ranking
                 r["ranking"] = self._res_get_ranking(result)
 

@@ -1,23 +1,23 @@
-from typing import Dict, Any, Tuple
+from typing import Any, Dict, Tuple
 
-from api.search import Search
-from api.fetch import (
+from app.handlers.fetch import (
+    FetchCast,
     FetchDrama,
+    FetchDramaList,
     FetchList,
     FetchPerson,
-    FetchCast,
     FetchReviews,
-    FetchDramaList,
 )
+from app.handlers.search import Search
 
 
 def error(code: int, description: str) -> Dict[str, Any]:
     return {
         "error": True,
         "code": code,
-        "description": "404 Not Found"
-        if code == 404
-        else description,  # prioritize error 404
+        "description": (
+            "404 Not Found" if code == 404 else description
+        ),  # prioritize error 404
     }
 
 

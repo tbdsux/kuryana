@@ -9,6 +9,6 @@
   "python.analysis.extraPaths": ["venv/lib"],
   "python.linting.mypyEnabled": true,
   "[python]": {
-    "editor.defaultFormatter": "ms-python.black-formatter"
+    "editor.defaultFormatter": "charliermarsh.ruff"
   }
 }

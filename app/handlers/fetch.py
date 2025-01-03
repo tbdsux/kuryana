@@ -1,11 +1,11 @@
-from typing import Dict, Any, List
-
-from api import MYDRAMALIST_WEBSITE
-from api.parser import BaseFetch
+import re
+from typing import Any, Dict, List
+from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin
-import re
+
+from app import MYDRAMALIST_WEBSITE
+from app.handlers.parser import BaseFetch
 
 
 class FetchDrama(BaseFetch):
@@ -381,9 +381,9 @@ class FetchDramaList(BaseFetch):
         movies_stats = item.find("label", class_="mdl-style-movies")
         days_stats = item.find("label", class_="mdl-style-days")
         return {
-            label.find("span", class_="name")
-            .get_text(strip=True): label.find("span", class_="cnt")
-            .get_text(strip=True)
+            label.find("span", class_="name").get_text(strip=True): label.find(
+                "span", class_="cnt"
+            ).get_text(strip=True)
             for label in [
                 drama_stats,
                 tvshows_stats,
