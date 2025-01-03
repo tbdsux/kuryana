@@ -7,8 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.10"]
-        
+        python-version: ["3.12"]
+
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
@@ -23,9 +23,9 @@ jobs:
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors or undefined names
-          flake8 api/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 app/ --count --select=E9,F63,F7,F82 --show-source --statistics
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          flake8 api/ --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+          flake8 app/ --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
       - name: Test with pytest
         run: |
           pytest
