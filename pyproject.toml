@@ -3,7 +3,7 @@ name = "kuryana"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 dependencies = [
     "beautifulsoup4>=4.12.3",
     "cloudscraper>=1.2.71",
@@ -12,9 +12,13 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = [
-    "flake8>=7.1.1",
-    "mypy>=1.14.1",
-    "pytest>=8.3.4",
-    "ruff>=0.8.5",
-]
+dev = ["mypy>=1.14.1", "pytest>=8.3.4", "ruff>=0.8.5"]
+
+
+[tool.ruff]
+line-length = 88
+indent-width = 4
+
+[tool.ruff.lint]
+select = ["C", "E", "F", "W", "B", "B9"]
+ignore = ["E501", "E203"]

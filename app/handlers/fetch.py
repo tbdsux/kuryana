@@ -128,7 +128,7 @@ class FetchPerson(BaseFetch):
         _work_headers = [i.text.strip() for i in _works_container.find_all("h5")]
         _work_tables = _works_container.find_all("table")
 
-        for j, k in zip(_work_headers, _work_tables):
+        for j, k in zip(_work_headers, _work_tables, strict=False):
             # theaders = ['episodes' if i.text.strip() == '#' else i.text.strip() for i in k.find("thead").find_all("th")]
             bare_works: List[Dict[str, Any]] = []
 
@@ -209,7 +209,7 @@ class FetchCast(BaseFetch):
         __temp_cast_headers = __casts_container.find_all("h3")
         __temp_cast_lists = __casts_container.find_all("ul")
 
-        for j, k in zip(__temp_cast_headers, __temp_cast_lists):
+        for j, k in zip(__temp_cast_headers, __temp_cast_lists, strict=False):
             casts = []
             for i in k.find_all("li"):
                 __temp_cast = i.find("a", class_="text-primary")
@@ -365,8 +365,8 @@ class FetchDramaList(BaseFetch):
         dramas = [self._parse_drama(item) for item in container]
         stats = [self._parse_total_stats(item) for item in container]
 
-        items = dict()
-        for title, drama, stat in zip(titles, dramas, stats):
+        items = {}
+        for title, drama, stat in zip(titles, dramas, stats, strict=False):
             items[title] = {"items": drama, "stats": stat}
 
         self.info["list"] = items
@@ -405,6 +405,7 @@ class FetchDramaList(BaseFetch):
             item_scores,
             item_episode_seens,
             item_episode_totals,
+            strict=False,
         ):
             parsed_item = {
                 "name": name.get_text(strip=True),
