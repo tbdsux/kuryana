@@ -1,7 +1,9 @@
-from api.fetch import FetchDramaList
 from pathlib import Path
+
 import pytest
 from bs4 import BeautifulSoup
+
+from app.handlers.fetch import FetchDramaList
 
 
 @pytest.fixture

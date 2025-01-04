@@ -1,0 +1,14 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    expose:
+      - 8000
+    networks:
+      - dokploy-network
+
+networks:
+  dokploy-network:
+    external: true

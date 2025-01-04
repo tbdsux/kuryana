@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Type, TypeVar, Union
 from urllib.parse import urljoin
 
@@ -7,7 +7,7 @@ import cloudscraper
 from bs4 import BeautifulSoup
 from bs4.element import NavigableString, Tag
 
-from api import MYDRAMALIST_WEBSITE
+from app import MYDRAMALIST_WEBSITE
 
 T = TypeVar("T", bound="Parser")
 
@@ -102,7 +102,7 @@ class BaseSearch(Parser):
         return {
             "query": self.query,
             "results": self.search_results,
-            "scrape_date": datetime.utcnow(),
+            "scrape_date": datetime.now(timezone.utc),
         }
 
 
@@ -120,7 +120,7 @@ class BaseFetch(Parser):
         return {
             "slug_query": self.query,
             "data": self.info,
-            "scrape_date": datetime.utcnow(),
+            "scrape_date": datetime.now(timezone.utc),
         }
 
     def _get(self) -> None:

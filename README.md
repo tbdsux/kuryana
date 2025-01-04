@@ -6,11 +6,13 @@
 
   <h4>THIS SERVICE IS ONLY CREATED TO SATISFY THE NEED FOR AN API FOR [MYDRAMALIST.COM](https://mydramalist.com). THIS WILL BE STOPPED ONCE AN OFFICIAL API WILL BE RELEASED.</h4>
 
-### Deploy Your Own
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/git/external?repository-url=https%3A%2F%2Fgithub.com%2FTheBoringDude%2Fkuryana)
-
 </div>
+
+## Deployment
+
+### [Vercel](https://github.com/tbdsux/kuryana/tree/deploy/vercel)
+
+Make sure to set `deploy/vercel` as the branch.
 
 ## API Use
 
@@ -88,39 +90,25 @@ https://kuryana.vercel.app/dramalist/{user_id}
 
 ## Development
 
-- Minimum Python Version : `3.9`,
+- Minimum Python Version : `3.12`,
 
-- Always make sure to create a virtualenvironment
+- Make sure `uv` is installed in your machine, [more details](https://docs.astral.sh/uv/getting-started/installation/)
+
+- Sync project dependencies
 
   ```sh
-  python -m venv venv
-  source ./venv/bin/activate.sh # change depends on your shell and os
-  ```
-
-- Install the dependencies
-  ```sh
-  pip install -r requirements.txt
+  uv sync
   ```
 
 ### Dev Server
 
-You can start the development server in two ways:
+Start development server.
 
-- Using the vercel CLI (`localhost:3000`)
+```sh
+uv run fastapi dev
+```
 
-  ```sh
-  vercel dev
-  ```
-
-  - The api will be `http://localhost:3000/api/*`
-
-- Or with `uvicorn` (`localhost:8000`)
-
-  ```sh
-  uvicorn api.main:app --reload
-  ```
-
-  - The api will be `http://localhost:8000/*`
+[FastAPI CLI] (https://fastapi.tiangolo.com/fastapi-cli/)
 
 ## NOTE
 

@@ -1,13 +1,11 @@
-from typing import Dict, Any
-
-from fastapi import FastAPI, Response
-from fastapi.middleware.cors import CORSMiddleware
+from typing import Any, Dict
 
 # bypassing cloudflare anti-bot
 import cloudscraper
+from fastapi import FastAPI, Response
+from fastapi.middleware.cors import CORSMiddleware
 
-from api.utils import search_func, fetch_func
-
+from app.utils import fetch_func, search_func
 
 app = FastAPI()
 
