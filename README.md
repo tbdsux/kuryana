@@ -10,59 +10,100 @@
 
 ## Deployment
 
+### Self Hosted - Docker
+
+```sh
+# run
+docker compose up -d --build
+
+# take down
+docker compose down
+```
+
+#### [Dokploy](Dokploy)
+
+[dokploy.docker-compose.yml](./dokploy.docker-compose.yml)
+
+```
+docker compose -f ./dokploy.docker-compose.yml up -d
+```
+
 ### [Vercel](https://github.com/tbdsux/kuryana/tree/deploy/vercel)
 
 Make sure to set `deploy/vercel` as the branch.
 
+> [!NOTE]
+> Deployed vercel project will still continue to live.
+
 ## API Use
 
-- [Search for dramas](https://kuryana.vercel.app/search/q/)
+- Search for dramas
 
-```
-https://kuryana.vercel.app/search/q/{yourquery}
-```
-
-- [Get DRAMA Info](https://kuryana.vercel.app/id/)
-
-```
-https://kuryana.vercel.app/id/{mydramalist-slug}
+```sh
+GET /search/q/{yourquery}
 ```
 
-- [Get DRAMA Cast](https://kuryana.vercel.app/id/{id}/cast)
+- Get DRAMA Info
 
-```
-https://kuryana.vercel.app/id/{mydramalist-slug}/cast
-```
-
-- [Get DRAMA Reviews](https://kuryana.vercel.app/id/{id}/reviews)
-
-```
-https://kuryana.vercel.app/id/{mydramalist-slug}/reviews
+```sh
+GET /id/{mydramalist-slug}
 ```
 
-- [Get Person(People) Info](https://kuryana.vercel.app/people/)
+- Get DRAMA Cast
 
-```
-https://kuryana.vercel.app/people/{people-id}
-```
-
-- [Get seasonal drama](https://kuryana.vercel.app/seasonal/)
-
-```
-https://kuryana.vercel.app/seasonal/{year}/{quarter}
+```sh
+GET /id/{mydramalist-slug}/cast
 ```
 
-- [Get Lists](https://kuryana.vercel.app/list/)
+- Get DRAMA Reviews
 
-```
-https://kuryana.vercel.app/list/{id}
+```sh
+GET /id/{mydramalist-slug}/reviews
 ```
 
-- [Get User Dramalist](https://kuryana.vercel.app/dramalist/)
+- Get Person(People) Info
 
+```sh
+GET /people/{people-id}
 ```
-https://kuryana.vercel.app/dramalist/{user_id}
+
+- Get seasonal drama
+
+```sh
+GET /seasonal/{year}/{quarter}
 ```
+
+- Get Lists
+
+```sh
+GET /list/{id}
+```
+
+- Get User Dramalist
+
+```sh
+GET /dramalist/{user_id}
+```
+
+### API Endpoints to use
+
+- Primary (Self-Hosted)
+
+  ```
+  https://kuryana.tbdh.app
+  ```
+
+  - Swagger [`https://kuryana.tbdh.app/docs`](https://kuryana.tbdh.app/docs)
+
+- Vercel deployment (`deploy/vercel` branch)
+
+  ```
+  https://kuryana.vercel.app
+  ```
+
+  - Swagger [`https://kuryana.vercel.app/docs`](https://kuryana.vercel.app/docs)
+
+  > Please start to transition on using the primary deployed endpoint for your projects, thank you.
 
 ### Error Messages
 
@@ -108,10 +149,11 @@ Start development server.
 uv run fastapi dev
 ```
 
-[FastAPI CLI] (https://fastapi.tiangolo.com/fastapi-cli/)
+[FastAPI CLI](https://fastapi.tiangolo.com/fastapi-cli/)
 
-## NOTE
+## Others
 
-All Requests and SCRAPED Datas are not cached by Vercel or the API itself.
+> [!NOTE]
+> All Requests and SCRAPED Datas are not cached by the API Endpoints.
 
-#### &copy; TheBoringDude
+#### &copy; tbdsux
