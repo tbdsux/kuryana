@@ -1,13 +1,16 @@
 from typing import Any, Dict
 
-# bypassing cloudflare anti-bot
-import cloudscraper
+import cloudscraper  # bypassing cloudflare anti-bot
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.lib.msgspec_json import MsgSpecJSONResponse
 from app.utils import fetch_func, search_func
 
-app = FastAPI()
+app = FastAPI(
+    title="Kuryana",
+    default_response_class=MsgSpecJSONResponse,
+)
 
 
 app.add_middleware(
@@ -20,8 +23,8 @@ app.add_middleware(
 
 
 @app.get("/")
-async def index() -> str:
-    return "A Simple and Basic MDL Scraper API"
+async def index() -> Dict[str, Any]:
+    return {"message": "A Simple and Basic MDL Scraper API"}
 
 
 @app.get("/search/q/{query}")

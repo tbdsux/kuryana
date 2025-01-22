@@ -8,7 +8,9 @@ client = TestClient(app)
 def test_index() -> None:
     response = client.get("/")
     assert response.status_code == 200
-    assert response.text == '"A Simple and Basic MDL Scraper API"'  # this is weird
+    assert (
+        response.json()["message"] == "A Simple and Basic MDL Scraper API"
+    )  # this is weird
 
 
 def test_sample_drama() -> None:
