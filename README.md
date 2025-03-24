@@ -55,6 +55,12 @@ GET /id/{mydramalist-slug}
 GET /id/{mydramalist-slug}/cast
 ```
 
+- Get DRAMA Episodes
+
+```sh
+GET /id/{mydramalist-slug}/episodes
+```
+
 - Get DRAMA Reviews
 
 ```sh
