@@ -1,11 +1,11 @@
-from typing import Dict, Any, List
+import re
+from typing import Any, Dict, List
+from urllib.parse import urljoin
+
+from bs4 import BeautifulSoup
 
 from api import MYDRAMALIST_WEBSITE
 from api.parser import BaseFetch
-
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin
-import re
 
 
 class FetchDrama(BaseFetch):
@@ -545,4 +545,59 @@ class FetchList(BaseFetch):
         }
 
     def _get(self) -> None:
+        self._get_main_container()
+
+
+class FetchEpisodes(BaseFetch):
+    def __init__(self, soup, query, code, ok):
+        super().__init__(soup, query, code, ok)
+
+    def _get_main_container(self) -> None:
+        container = self.soup.find("div", class_="app-body")
+        title = self._parse_title(container)
+        episodes = self._parse_episodes(container)
+
+        self.info = {
+            "title": title,
+            "episodes": episodes,
+        }
+
+    def _parse_episodes(self, item: BeautifulSoup) -> List[Dict[str, Any]]:
+        episodes_container = item.find("div", class_="episodes")
+        epi_list = episodes_container.find_all(
+            "div", class_="col-xs-12 col-sm-6 col-md-4 p-a episode"
+        )
+
+        episodes = []
+        for epi in epi_list:
+            title = epi.find("h2", class_="title").get_text(strip=True)
+
+            cover = epi.find("div", class_="cover")
+            img = cover.find("img")["data-src"]
+            link = urljoin(MYDRAMALIST_WEBSITE, cover.find("a")["href"])
+
+            rating = (
+                epi.find("div", class_="rating-panel m-b-0")
+                .find("div")
+                .get_text(strip=True)
+            )
+            air_date = epi.find("div", class_="air-date").get_text(strip=True)
+
+            episodes.append(
+                {
+                    "title": title,
+                    "image": img,
+                    "link": link,
+                    "rating": rating,
+                    "air_date": air_date,
+                }
+            )
+
+        return episodes
+
+    def _parse_title(self, item: BeautifulSoup) -> str:
+        title = item.find("h1", class_="film-title").get_text(strip=True)
+        return title
+
+    def _get(self):
         self._get_main_container()

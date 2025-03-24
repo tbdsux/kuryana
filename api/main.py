@@ -1,13 +1,11 @@
-from typing import Dict, Any
-
-from fastapi import FastAPI, Response
-from fastapi.middleware.cors import CORSMiddleware
+from typing import Any, Dict
 
 # bypassing cloudflare anti-bot
 import cloudscraper
+from fastapi import FastAPI, Response
+from fastapi.middleware.cors import CORSMiddleware
 
-from api.utils import search_func, fetch_func
-
+from api.utils import fetch_func, search_func
 
 app = FastAPI()
 
@@ -45,6 +43,14 @@ async def fetch(drama_id: str, response: Response) -> Dict[str, Any]:
 @app.get("/id/{drama_id}/cast")
 async def fetch_cast(drama_id: str, response: Response) -> Dict[str, Any]:
     code, r = await fetch_func(query=f"{drama_id}/cast", t="cast")
+
+    response.status_code = code
+    return r
+
+
+@app.get("/id/{drama_id}/episodes")
+async def fetch_episodes(drama_id: str, response: Response) -> Dict[str, Any]:
+    code, r = await fetch_func(query=f"{drama_id}/episodes", t="episodes")
 
     response.status_code = code
     return r

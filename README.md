@@ -28,39 +28,56 @@ https://kuryana.vercel.app/id/{mydramalist-slug}
 
 - [Get DRAMA Cast](https://kuryana.vercel.app/id/{id}/cast)
 
-```
+````
 https://kuryana.vercel.app/id/{mydramalist-slug}/cast
+
+- [Get DRAMA Episodes](https://kuryana.vercel.app/id/{id}/episodes)
+
+```sh
+GET /id/{mydramalist-slug}/episodes
+````
+
 ```
 
 - [Get DRAMA Reviews](https://kuryana.vercel.app/id/{id}/reviews)
 
 ```
+
 https://kuryana.vercel.app/id/{mydramalist-slug}/reviews
+
 ```
 
 - [Get Person(People) Info](https://kuryana.vercel.app/people/)
 
 ```
+
 https://kuryana.vercel.app/people/{people-id}
+
 ```
 
 - [Get seasonal drama](https://kuryana.vercel.app/seasonal/)
 
 ```
+
 https://kuryana.vercel.app/seasonal/{year}/{quarter}
+
 ```
 
 - [Get Lists](https://kuryana.vercel.app/list/)
 
 ```
+
 https://kuryana.vercel.app/list/{id}
+
 ```
 
 - [Get User Dramalist](https://kuryana.vercel.app/dramalist/)
 
 ```
+
 https://kuryana.vercel.app/dramalist/{user_id}
-```
+
+````
 
 ### Error Messages
 
@@ -75,7 +92,7 @@ https://kuryana.vercel.app/dramalist/{user_id}
     "info": "You can see this page because the URL you are accessing cannot be found."
   }
 }
-```
+````
 
 ```js
 // could also be this (only on `/search`) endpoint
