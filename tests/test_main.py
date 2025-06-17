@@ -17,11 +17,14 @@ def test_sample_drama() -> None:
     dramas = [
         {
             "id": "18452-goblin",
-            "expected": {"title": "Goblin", "complete_title": "Goblin (2016)"},
+            "expected": {
+                "title": "Guardian: The Lonely and Great God",
+                "complete_title": "Guardian: The Lonely and Great God",
+            },
         },
         {
             "id": "58953-mouse",
-            "expected": {"title": "Mouse", "complete_title": "Mouse (2021)"},
+            "expected": {"title": "Mouse", "complete_title": "Mouse"},
         },
     ]
 
