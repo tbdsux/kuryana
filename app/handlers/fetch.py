@@ -106,15 +106,19 @@ class FetchPerson(BaseFetch):
         # these are the most important drama infos / details
 
         # NAME
-        self.info["name"] = container.find("h1", class_="film-title").text
+        self.info["name"] = container.find("h1", class_="film-title").get_text().strip()
 
         # ABOUT?
         __temp_about = container.find("div", class_="col-lg-8 col-md-8").find(
             "div", class_="col-sm-8 col-lg-12 col-md-12"
         )
-        self.info["about"] = __temp_about.text.replace(
-            __temp_about.find("div", class_="hidden-md-up").text.strip(), ""
-        ).strip()
+        self.info["about"] = (
+            __temp_about.text.replace(
+                __temp_about.find("div", class_="hidden-md-up").text.strip(), ""
+            )
+            .replace("Remove ads\n\n", "")
+            .strip()
+        )
 
         # IMAGE
         self.info["profile"] = self._get_poster(container)
@@ -198,7 +202,9 @@ class FetchCast(BaseFetch):
         # these are the most important drama infos / details
 
         # TITLE
-        self.info["title"] = container.find("h1", class_="film-title").find("a").text
+        self.info["title"] = (
+            container.find("h1", class_="film-title").get_text().strip()
+        )
 
         # POSTER
         self.info["poster"] = self._get_poster(container)
@@ -253,7 +259,9 @@ class FetchReviews(BaseFetch):
         # these are the most important drama infos / details
 
         # TITLE
-        self.info["title"] = container.find("h1", class_="film-title").find("a").text
+        self.info["title"] = (
+            container.find("h1", class_="film-title").get_text().strip()
+        )
 
         # POSTER
         self.info["poster"] = self._get_poster(container)
