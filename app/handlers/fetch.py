@@ -29,7 +29,21 @@ class FetchDrama(BaseFetch):
         self.info["complete_title"] = film_title.get_text().strip()
 
         film_subtitle = container.find("div", class_="film-subtitle")
-        self.info["sub_title"] = film_subtitle.get_text().strip()
+
+        sub_title = film_subtitle.get_text().strip()
+
+        if sub_title:
+            self.info["sub_title"] = sub_title
+            
+            # Split the string by the separator '‧'
+            parts = sub_title.split('‧')
+            
+            # The year is the last part, remove any leading/trailing whitespace
+            year_str = parts[-1].strip()
+            
+            # Check if the extracted string consists of digits and can be an integer
+            if year_str.isdigit():
+                self.info["year"] = year_str.strip()
 
         # RATING (could be either N/A or with number)
         self.info["rating"] = self._handle_rating(
