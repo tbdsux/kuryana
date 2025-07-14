@@ -34,13 +34,13 @@ class FetchDrama(BaseFetch):
 
         if sub_title:
             self.info["sub_title"] = sub_title
-            
+
             # Split the string by the separator '‧'
-            parts = sub_title.split('‧')
-            
+            parts = sub_title.split("‧")
+
             # The year is the last part, remove any leading/trailing whitespace
             year_str = parts[-1].strip()
-            
+
             # Check if the extracted string consists of digits and can be an integer
             if year_str.isdigit():
                 self.info["year"] = year_str.strip()
