@@ -1,3 +1,4 @@
+import json
 import re
 from typing import Any, Dict, List
 from urllib.parse import urljoin
@@ -61,6 +62,24 @@ class FetchDrama(BaseFetch):
                 }
             )
         self.info["casts"] = casts
+
+        # Extract nextEpisodeAiring
+        scripts = self.soup.find_all("script", type="text/javascript")
+        for script in scripts:
+            if script.string and "var nextEpisodeAiring =" in script.string:
+                match = re.search(r"var nextEpisodeAiring = ({.*});", script.string)
+                if match:
+                    next_airing = json.loads(match.group(1))
+                    self.info["next_episode_airing"] = next_airing
+                    current_episode = float(next_airing["episode_number"]) - 1
+                    self.info["current_episode"] = (
+                        "0"
+                        if current_episode < 0
+                        else str(float(next_airing["episode_number"]) - 1).replace(
+                            ".0", ""
+                        )
+                    )
+                break
 
     # get other info
     def _get_other_info(self) -> None:
