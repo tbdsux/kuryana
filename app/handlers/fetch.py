@@ -626,7 +626,12 @@ class FetchEpisodes(BaseFetch):
                 .find("div")
                 .get_text(strip=True)
             )
-            air_date = epi.find("div", class_="air-date").get_text(strip=True)
+
+            air_date: str | None = None
+            try:
+                air_date = epi.find("div", class_="air-date").get_text(strip=True)
+            except Exception:
+                pass
 
             episodes.append(
                 {
