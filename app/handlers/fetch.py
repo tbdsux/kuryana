@@ -37,13 +37,14 @@ class FetchDrama(BaseFetch):
 
             # Split the string by the separator '‧'
             parts = sub_title.split("‧")
+            print(parts)
 
             # The year is the last part, remove any leading/trailing whitespace
             year_str = parts[-1].strip()
+            print(year_str)
 
-            # Check if the extracted string consists of digits and can be an integer
-            if year_str.isdigit():
-                self.info["year"] = year_str.strip()
+            # Year could be a range, so we keep it as a string
+            self.info["year"] = year_str.strip()
 
         # RATING (could be either N/A or with number)
         self.info["rating"] = self._handle_rating(
@@ -626,7 +627,12 @@ class FetchEpisodes(BaseFetch):
                 .find("div")
                 .get_text(strip=True)
             )
-            air_date = epi.find("div", class_="air-date").get_text(strip=True)
+
+            air_date: str | None = None
+            try:
+                air_date = epi.find("div", class_="air-date").get_text(strip=True)
+            except Exception:
+                pass
 
             episodes.append(
                 {
