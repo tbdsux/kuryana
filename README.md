@@ -109,6 +109,8 @@ GET /dramalist/{user_id}
 
   - Swagger [`https://kuryana.vercel.app/docs`](https://kuryana.vercel.app/docs)
 
+  > Has quirks like requests failing for first time then succeeding.
+  >
   > Please start to transition on using the primary deployed endpoint for your projects, thank you.
 
 ### Error Messages
@@ -133,6 +135,59 @@ GET /dramalist/{user_id}
   "code": 404,
   "description": "404 Not Found"
 }
+```
+
+### API Wrappers
+
+A JS/TS and Python api wrappers are currently available. [Learn More...](https://gitea.com/tbdsux/kuryana-api-wrappers)
+
+#### JS/TS
+
+```ts
+import { Kuryana } from "@tbdhdev/kuryana-ts";
+
+async function main() {
+  const kuryana = new Kuryana();
+  // const kuryana = new Kuryana("https://custom-endpoint.net");
+
+  const res = await kuryana.search("goblin");
+
+  if (!res.success) {
+    console.error("Search failed:", res.error);
+    return;
+  }
+
+  // log results
+  for (const item of res.result.results.dramas) {
+    console.log("Drama:", item.title);
+    console.log("Year:", item.year);
+    console.log("-----\n");
+  }
+}
+
+main();
+```
+
+#### Python
+
+```python
+from kuryana import Kuryana
+
+client = Kuryana()
+
+
+if __name__ == "__main__":
+    response = client.get()
+    print(response.message)
+
+    assert "MDL Scraper API" in response.message
+
+    print("\n\n")
+
+    search = client.search("goblin")
+    for drama in search.results.dramas:
+        print(f"{drama.title} - {drama.year}")
+
 ```
 
 ## Development
