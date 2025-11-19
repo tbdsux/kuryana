@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-import cloudscraper  # bypassing cloudflare anti-bot
+import primp
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -100,9 +100,9 @@ async def mdlSeasonal(year: int, quarter: int) -> Any:
     # quarter -> every 3 months (Jan-Mar=1, Apr-Jun=2, Jul-Sep=3, Oct-Dec=4)
     # --- seasonal information --- winter --- spring --- summer --- fall ---
 
-    scraper = cloudscraper.create_scraper()
+    client = primp.Client(impersonate="chrome_131", impersonate_os="linux")
 
-    return scraper.post(
+    return client.post(
         "https://mydramalist.com/v1/quarter_calendar",
         data={"quarter": quarter, "year": year},
     ).json()
