@@ -15,7 +15,12 @@ class FetchDrama(BaseFetch):
 
     # get the main html container for the each search results
     def _get_main_container(self) -> None:
+        if self.soup is None:
+            return
+
         container = self.soup.find("div", class_="app-body")
+        if container is None:
+            return
 
         # append scraped data
         # these are the most important drama infos / details
@@ -98,9 +103,13 @@ class FetchDrama(BaseFetch):
 
     # get other info
     def _get_other_info(self) -> None:
-        others = self.soup.find("div", class_="show-detailsxss").find(
-            "ul", class_="list m-a-0"
-        )
+        if self.soup is None:
+            return
+
+        others_container = self.soup.find("div", class_="show-detailsxss")
+        if others_container is None:
+            return
+        others = others_container.find("ul", class_="list m-a-0")
 
         try:
             self.info["others"] = {}
@@ -134,7 +143,12 @@ class FetchPerson(BaseFetch):
         super().__init__(soup, query, code, ok)
 
     def _get_main_container(self) -> None:
+        if self.soup is None:
+            return
+
         container = self.soup.find("div", class_="app-body")
+        if container is None:
+            return
 
         # append scraped data
         # these are the most important drama infos / details
@@ -230,7 +244,12 @@ class FetchCast(BaseFetch):
         super().__init__(soup, query, code, ok)
 
     def _get_main_container(self) -> None:
+        if self.soup is None:
+            return
+
         container = self.soup.find("div", class_="app-body")
+        if container is None:
+            return
 
         # append scraped data
         # these are the most important drama infos / details
@@ -286,8 +305,13 @@ class FetchReviews(BaseFetch):
     def __init__(self, soup: BeautifulSoup, query: str, code: int, ok: bool) -> None:
         super().__init__(soup, query, code, ok)
 
-    def _get_main_container(self) -> None:
+    def _get_main_container(self) -> None:  # noqa: C901
+        if self.soup is None:
+            return
+
         container = self.soup.find("div", class_="app-body")
+        if container is None:
+            return
 
         # append scraped data
         # these are the most important drama infos / details
@@ -405,7 +429,13 @@ class FetchDramaList(BaseFetch):
         super().__init__(soup, query, code, ok)
 
     def _get_main_container(self) -> None:
+        if self.soup is None:
+            return
+
         container = self.soup.find_all("div", class_="mdl-style-list")
+        if container is None:
+            return
+
         titles = [self._parse_title(item) for item in container]
         dramas = [self._parse_drama(item) for item in container]
         stats = [self._parse_total_stats(item) for item in container]
@@ -417,7 +447,11 @@ class FetchDramaList(BaseFetch):
         self.info["list"] = items
 
     def _parse_title(self, item: BeautifulSoup) -> str:
-        return item.find("h3", class_="mdl-style-list-label").get_text(strip=True)
+        label = item.find("h3", class_="mdl-style-list-label")
+        if label is None:
+            return ""
+
+        return label.get_text(strip=True)
 
     def _parse_total_stats(self, item: BeautifulSoup) -> Dict[str, str]:
         drama_stats = item.find("label", class_="mdl-style-dramas")
@@ -425,6 +459,7 @@ class FetchDramaList(BaseFetch):
         episodes_stats = item.find("label", class_="mdl-style-episodes")
         movies_stats = item.find("label", class_="mdl-style-movies")
         days_stats = item.find("label", class_="mdl-style-days")
+
         return {
             label.find("span", class_="name").get_text(strip=True): label.find(
                 "span", class_="cnt"
@@ -436,9 +471,10 @@ class FetchDramaList(BaseFetch):
                 movies_stats,
                 days_stats,
             ]
+            if label is not None
         }
 
-    def _parse_drama(self, item: BeautifulSoup) -> Dict[str, str]:
+    def _parse_drama(self, item: BeautifulSoup) -> List[Dict[str, str]]:
         item_names = item.find_all("a", class_="title")
         item_scores = item.find_all("span", class_="score")
         item_episode_seens = item.find_all("span", class_="episode-seen")
@@ -472,7 +508,12 @@ class FetchList(BaseFetch):
         super().__init__(soup, query, code, ok)
 
     def _get_main_container(self) -> None:
+        if self.soup is None:
+            return
+
         container = self.soup.find("div", class_="app-body")
+        if container is None:
+            return
 
         # get list title
         header = container.find("div", class_="box-header")
@@ -499,25 +540,39 @@ class FetchList(BaseFetch):
 
     def _parse_person(self, item: BeautifulSoup) -> Dict[str, Any]:
         # parse person image
-        person_img_container = str(
-            item.find("img", class_="img-responsive")["data-src"]
-        ).split("/1280/")
+        person_img_container = item.find("img", class_="img-responsive")
+        if person_img_container is None:
+            person_img_container = {}
+        person_img_src = str(person_img_container.get("data-src", "")).split("/1280/")
         person_img = ""
-        if len(person_img_container) > 1:
-            person_img = person_img_container[1]
+        if len(person_img_src) > 1:
+            person_img = person_img_src[1]
         else:
-            person_img = person_img_container[0]
+            person_img = person_img_src[0]
 
         person_img = person_img.replace(
             "s.jpg", "m.jpg"
         )  # replace image url to give the bigger size
 
         item_header = item.find("div", class_="content")
+        if item_header is None:
+            return {
+                "name": "",
+                "type": "person",
+                "image": person_img,
+                "slug": "",
+                "url": "",
+            }
         person_name = item_header.find("a").get_text().strip()
         person_slug = item_header.find("a").get("href")
         person_url = urljoin(MYDRAMALIST_WEBSITE, person_slug)
 
-        person_nationality = item.find(class_="text-muted").get_text().strip()
+        person_nationality_container = item.find(class_="text-muted")
+        person_nationality = (
+            person_nationality_container.get_text().strip()
+            if person_nationality_container
+            else ""
+        )
         person_details_xx = item.find_all("p")
         person_details = ""
         if len(person_details_xx) > 1:
@@ -535,20 +590,33 @@ class FetchList(BaseFetch):
 
     def _parse_show(self, item: BeautifulSoup) -> Dict[str, Any]:
         # parse list image
-        list_img_container = str(
-            item.find("img", class_="img-responsive")["data-src"]
-        ).split("/1280/")
+        list_img_container = item.find("img", class_="img-responsive")
+        if list_img_container is None:
+            list_img_container = {}
+        list_img_src = str(list_img_container.get("data-src", "")).split("/1280/")
         list_img = ""
-        if len(list_img_container) > 1:
-            list_img = list_img_container[1]
+        if len(list_img_src) > 1:
+            list_img = list_img_src[1]
         else:
-            list_img = list_img_container[0]
+            list_img = list_img_src[0]
 
         list_img = list_img.replace(
             "t.jpg", "c.jpg"
         )  # replace image url to give the bigger size
 
         list_header = item.find("h2")
+        if list_header is None:
+            return {
+                "title": "",
+                "image": list_img,
+                "rank": "",
+                "url": "",
+                "slug": "",
+                "type": "",
+                "year": "",
+                "episodes": None,
+                "short_summary": "",
+            }
         list_title = list_header.find("a").get_text().strip()
         list_title_rank = (
             list_header.get_text().replace(list_title, "").strip().strip(".")
@@ -558,7 +626,11 @@ class FetchList(BaseFetch):
 
         # parse example: `Korean Drama - 2020, 16 episodes`
         list_details_container = item.find(class_="text-muted")  # could be `p` or `div`
-        list_details_xx = list_details_container.get_text().split(",")
+        list_details_xx = (
+            list_details_container.get_text().split(",")
+            if list_details_container
+            else ""
+        )
         list_details_type = list_details_xx[0].split("-")[0].strip()
         list_details_year = list_details_xx[0].split("-")[1].strip()
 
@@ -599,7 +671,13 @@ class FetchEpisodes(BaseFetch):
         super().__init__(soup, query, code, ok)
 
     def _get_main_container(self) -> None:
+        if self.soup is None:
+            return
+
         container = self.soup.find("div", class_="app-body")
+        if container is None:
+            return
+
         title = self._parse_title(container)
         episodes = self._parse_episodes(container)
 
@@ -610,6 +688,9 @@ class FetchEpisodes(BaseFetch):
 
     def _parse_episodes(self, item: BeautifulSoup) -> List[Dict[str, Any]]:
         episodes_container = item.find("div", class_="episodes")
+        if episodes_container is None:
+            return []
+
         epi_list = episodes_container.find_all(
             "div", class_="col-xs-12 col-sm-6 col-md-4 p-a episode"
         )
@@ -647,8 +728,9 @@ class FetchEpisodes(BaseFetch):
         return episodes
 
     def _parse_title(self, item: BeautifulSoup) -> str:
-        title = item.find("h1", class_="film-title").get_text(strip=True)
-        return title
+        title_container = item.find("h1", class_="film-title")
+
+        return title_container.get_text(strip=True) if title_container else ""
 
     def _get(self):
         self._get_main_container()

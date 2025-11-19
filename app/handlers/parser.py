@@ -2,8 +2,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Type, TypeVar, Union
 from urllib.parse import urljoin
 
-# bypassing cloudflare anti-bot
-import cloudscraper
+import primp
 from bs4 import BeautifulSoup
 from bs4.element import NavigableString, Tag
 
@@ -26,7 +25,9 @@ class Parser:
         "User-Agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.123 Mobile Safari/537.36",
     }
 
-    def __init__(self, soup: BeautifulSoup, query: str, code: int, ok: bool) -> None:
+    def __init__(
+        self, soup: BeautifulSoup | None, query: str, code: int, ok: bool
+    ) -> None:
         self.soup = soup
         self.query = query
         self.status_code = code
@@ -47,12 +48,14 @@ class Parser:
         soup = None
 
         try:
-            # bypassing cloudflare anti-bot
-            scraper = cloudscraper.create_scraper()
-            resp = scraper.get(url, headers=Parser.headers)
+            client = primp.Client(impersonate="chrome_131", impersonate_os="linux")
+            resp = client.get(url, headers=Parser.headers)
 
             # set the main soup var
-            soup = BeautifulSoup(resp.text, "lxml")
+            soup = BeautifulSoup(
+                resp.text,
+                "html.parser",  # use `lxml` parser for better speed
+            )
 
             # set the status code
             code = resp.status_code
@@ -65,12 +68,18 @@ class Parser:
 
     # get page err, if possible
     def res_get_err(self) -> Dict[str, Any]:
+        if self.soup is None:
+            return {}
+
         container = self.soup.find("div", class_="app-body")
 
         # if the page was not found,
         # or there was a problem with scraping,
         # try to get the error and return the err message
         err: Dict[str, Any] = {}
+
+        if container is None:
+            return err
 
         try:
             err["code"] = self.status_code
@@ -129,16 +138,24 @@ class BaseFetch(Parser):
     def _get_poster(self, container: Union[Tag, NavigableString]) -> Union[str, Any]:
         poster = container.find("img")
 
+        if poster is None:
+            return ""
+
         for i in self._img_attrs:
-            if poster.has_attr(i):
-                return poster[i]
+            if poster.has_attr(i):  # type: ignore
+                return poster[i]  # type: ignore
 
         # blank if none
         return ""
 
     # get the drama details <= statistics section is added in here
     def _get_details(self, classname: str) -> None:
+        if self.soup is None:
+            return
+
         details = self.soup.find("ul", class_=classname)  # "list m-a-0 hidden-md-up"
+        if details is None:
+            return
 
         try:
             self.info["details"] = {}
