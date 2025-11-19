@@ -17,28 +17,38 @@ class Search(BaseSearch):
         self.mdl_container_id = "mdl-"
 
     # get the main html container for the each search results
-    def _get_container(self) -> ResultSet:
-        return self.soup.find("div", class_="col-lg-8 col-md-8").find_all(
-            "div", class_="box"
-        )
+    def _get_container(self) -> ResultSet | None:
+        if self.soup is None:
+            return None
+
+        results_container = self.soup.find("div", class_="col-lg-8 col-md-8")
+
+        if results_container is None:
+            return None
+
+        return results_container.find_all("div", class_="box")
 
     # get the search result ranking
     def _res_get_ranking(self, result_container: BeautifulSoup) -> Any:
         try:
-            ranking = result_container.find("div", class_="ranking pull-right").find(
-                "span"
+            ranking_container = result_container.find(
+                "div", class_="ranking pull-right"
             )
+            if ranking_container is None:
+                return None
+
+            ranking = ranking_container.find("span")
         except AttributeError:
             return None  # return None if the result doesn't have it
 
-        return ranking.text
+        return ranking.text.strip()
 
     # get the year info of the result
     def _res_get_year_info(
         self, result_container: Union[NavigableString, Tag]
     ) -> Tuple[Union[str, None], Union[int, None], Union[str, bool]]:
         # extract the type and year
-        _typeyear = result_container.find("span", class_="text-muted").text
+        _typeyear = result_container.find("span", class_="text-muted").text  # type: ignore
         _year_eps = _typeyear.split("-")[1]
 
         year: Optional[int] = None  # type error below
@@ -67,14 +77,16 @@ class Search(BaseSearch):
     def _res_get_url(self, result_container: Union[Tag, NavigableString]) -> str:
         return urljoin(
             MYDRAMALIST_WEBSITE,
-            result_container.find("h6", class_="text-primary title")
-            .find("a")["href"]
+            result_container.find("h6", class_="text-primary title")  # type: ignore
+            .find("a")["href"]  # type: ignore
             .replace("/", ""),
         )
 
     # search results handler
     def _get_search_results(self) -> None:
         results = self._get_container()  # get the search results
+        if results is None:
+            return
 
         _dramas = []
         _people = []
