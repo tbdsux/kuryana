@@ -106,3 +106,19 @@ async def mdlSeasonal(year: int, quarter: int) -> Any:
         "https://mydramalist.com/v1/quarter_calendar",
         data={"quarter": quarter, "year": year},
     ).json()
+
+# get episode schedule
+@app.get("/schedule")
+async def mdlSchedule(response: Response) -> Any:
+    try:
+        client = primp.Client(
+            impersonate="chrome_131",
+            impersonate_os="linux"
+        )
+
+        r = client.post(
+            "https://mydramalist.com/v1/episode_calendar?lang=en-US"
+        )
+
+        response.status_code = r.status_code
+        return r.json()
