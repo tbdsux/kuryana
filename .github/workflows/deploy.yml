@@ -21,7 +21,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            echo "Deploying JobTrackify..."
+            echo "Deploying kuryana..."
             cd ${{secrets.FOLDER_PATH}}
-            git pull origin main
+            git pull origin master
             docker compose up -d --build
