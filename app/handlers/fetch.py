@@ -128,10 +128,12 @@ class FetchDrama(BaseFetch):
                             rl_title = rl.text.strip()
                             rl_extra_text = ""
                             rl_link = ""
+                            rl_slug = ""
                         else:
                             rl_title = rl.find("a").text.strip()
                             rl_extra_text = rl.text.replace(rl_title, "").strip()
-                            rl_link = urljoin(MYDRAMALIST_WEBSITE, rl.find("a")["href"])
+                            rl_slug = rl.find("a")["href"].strip()
+                            rl_link = urljoin(MYDRAMALIST_WEBSITE, rl_slug)
 
                         if "related_content" not in self.info["others"]:
                             self.info["others"]["related_content"] = []
@@ -140,6 +142,7 @@ class FetchDrama(BaseFetch):
                                 "title": rl_title,
                                 "link": rl_link,
                                 "description": rl_extra_text,
+                                "slug": rl_slug.replace("/", "")
                             }
                         )
                     continue
