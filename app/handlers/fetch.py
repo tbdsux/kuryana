@@ -117,12 +117,39 @@ class FetchDrama(BaseFetch):
             for i in all_others:
                 # get each li from <ul>
                 _title = i.find("b").text.strip()
-                self.info["others"][
-                    _title.replace(":", "").replace(" ", "_").lower()
-                ] = [
-                    i.strip()
-                    for i in i.text.replace(_title + " ", "").strip().split(", ")
-                ]
+                _title_key = _title.replace(":", "").replace(" ", "_").lower()
+
+                if _title_key == "related_content":
+                    _related_content_titles = i.find_all("div", class_="title")
+                    for rl in _related_content_titles:
+                        rl_href = rl.find("a")
+                        if rl_href is None:
+                            # If no link, just get the text and continue
+                            rl_title = rl.text.strip()
+                            rl_extra_text = ""
+                            rl_link = ""
+                        else:
+                            rl_title = rl.find("a").text.strip()
+                            rl_extra_text = rl.text.replace(rl_title, "").strip()
+                            rl_link = urljoin(MYDRAMALIST_WEBSITE, rl.find("a")["href"])
+
+                        if "related_content" not in self.info["others"]:
+                            self.info["others"]["related_content"] = []
+                        self.info["others"]["related_content"].append(
+                            {
+                                "title": rl_title,
+                                "link": rl_link,
+                                "description": rl_extra_text,
+                            }
+                        )
+                    continue
+                else:
+                    self.info["others"][
+                        _title.replace(":", "").replace(" ", "_").lower()
+                    ] = [
+                        i.strip()
+                        for i in i.text.replace(_title + " ", "").strip().split(", ")
+                    ]
 
         except Exception:
             # there was a problem while trying to parse
