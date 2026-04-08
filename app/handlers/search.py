@@ -127,6 +127,11 @@ class Search(BaseSearch):
                 # specific drama info
                 r["type"], r["year"], r["series"] = self._res_get_year_info(result)
 
+                # extract drama rating (could either be empty string or number)
+                rating = result.find("span", class_="score").text
+                if rating:
+                    r["rating"] = float(rating)
+
                 _dramas.append(r)
                 continue
 
