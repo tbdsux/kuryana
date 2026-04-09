@@ -4,6 +4,7 @@ from typing import Any, Dict, List
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 
 from app import MYDRAMALIST_WEBSITE
 from app.handlers.parser import BaseFetch
@@ -30,10 +31,14 @@ class FetchDrama(BaseFetch):
         # Title = Goblin
         # Complete Title = Goblin (2016)
         film_title = container.find("h1", class_="film-title")
+        if film_title is None:
+            return
         self.info["title"] = film_title.get_text().strip()
         self.info["complete_title"] = film_title.get_text().strip()
 
         film_subtitle = container.find("div", class_="film-subtitle")
+        if film_subtitle is None:
+            return
 
         sub_title = film_subtitle.get_text().strip()
 
@@ -52,15 +57,17 @@ class FetchDrama(BaseFetch):
             self.info["year"] = year_str.strip()
 
         # RATING (could be either N/A or with number)
+        _rating_container = container.find("div", class_="col-film-rating")
         self.info["rating"] = self._handle_rating(
-            container.find("div", class_="col-film-rating").find("div")
+            _rating_container.find("div") if _rating_container is not None else None
         )
 
         # POSTER
         self.info["poster"] = self._get_poster(container)
 
         # SYNOPSIS
-        synopsis = container.find("div", class_="show-synopsis").find("p")
+        _synopsis_container = container.find("div", class_="show-synopsis")
+        synopsis = _synopsis_container.find("p") if _synopsis_container is not None else None
         self.info["synopsis"] = (
             synopsis.get_text().replace("Edit Translation", "").strip()
             if synopsis
@@ -72,10 +79,13 @@ class FetchDrama(BaseFetch):
         casts = []
         for i in __casts:
             __temp_cast = i.find("a", class_="text-primary text-ellipsis")
-            __temp_cast_slug = __temp_cast["href"].strip()
+            if __temp_cast is None:
+                continue
+            __temp_cast_slug = str(__temp_cast.get("href", "")).strip()
+            _b = __temp_cast.find("b")
             casts.append(
                 {
-                    "name": __temp_cast.find("b").text.strip(),
+                    "name": _b.text.strip() if _b is not None else "",
                     "profile_image": self._get_poster(i),
                     "slug": __temp_cast_slug,
                     "link": urljoin(MYDRAMALIST_WEBSITE, __temp_cast_slug),
@@ -110,13 +120,18 @@ class FetchDrama(BaseFetch):
         if others_container is None:
             return
         others = others_container.find("ul", class_="list m-a-0")
+        if others is None:
+            return
 
         try:
             self.info["others"] = {}
             all_others = others.find_all("li")
             for i in all_others:
                 # get each li from <ul>
-                _title = i.find("b").text.strip()
+                _b = i.find("b")
+                if _b is None:
+                    continue
+                _title = _b.text.strip()
                 _title_key = _title.replace(":", "").replace(" ", "_").lower()
 
                 if _title_key == "related_content":
@@ -130,9 +145,9 @@ class FetchDrama(BaseFetch):
                             rl_link = ""
                             rl_slug = ""
                         else:
-                            rl_title = rl.find("a").text.strip()
+                            rl_title = rl_href.text.strip()
                             rl_extra_text = rl.text.replace(rl_title, "").strip()
-                            rl_slug = rl.find("a")["href"].strip()
+                            rl_slug = str(rl_href.get("href", "")).strip()
                             rl_link = urljoin(MYDRAMALIST_WEBSITE, rl_slug)
 
                         if "related_content" not in self.info["others"]:
@@ -184,15 +199,22 @@ class FetchPerson(BaseFetch):
         # these are the most important drama infos / details
 
         # NAME
-        self.info["name"] = container.find("h1", class_="film-title").get_text().strip()
+        _film_title = container.find("h1", class_="film-title")
+        if _film_title is None:
+            return
+        self.info["name"] = _film_title.get_text().strip()
 
         # ABOUT?
-        __temp_about = container.find("div", class_="col-lg-8 col-md-8").find(
-            "div", class_="col-sm-8 col-lg-12 col-md-12"
-        )
+        _col_container = container.find("div", class_="col-lg-8 col-md-8")
+        if _col_container is None:
+            return
+        __temp_about = _col_container.find("div", class_="col-sm-8 col-lg-12 col-md-12")
+        if __temp_about is None:
+            return
+        _hidden = __temp_about.find("div", class_="hidden-md-up")
         self.info["about"] = (
             __temp_about.text.replace(
-                __temp_about.find("div", class_="hidden-md-up").text.strip(), ""
+                _hidden.text.strip() if _hidden is not None else "", ""
             )
             .replace("Remove ads\n\n", "")
             .strip()
@@ -205,7 +227,7 @@ class FetchPerson(BaseFetch):
         self.info["works"] = {}
 
         # container
-        _works_container = container.find("div", class_="col-lg-8 col-md-8").find_all(
+        _works_container = _col_container.find_all(
             "div", class_="box-body"
         )[1]
 
@@ -217,19 +239,31 @@ class FetchPerson(BaseFetch):
             # theaders = ['episodes' if i.text.strip() == '#' else i.text.strip() for i in k.find("thead").find_all("th")]
             bare_works: List[Dict[str, Any]] = []
 
-            for i in k.find("tbody").find_all("tr"):
-                _raw_year = i.find("td", class_="year").text
-                _raw_title = i.find("td", class_="title").find("a")
+            _tbody = k.find("tbody")
+            if _tbody is None:
+                continue
+            for i in _tbody.find_all("tr"):
+                _td_year = i.find("td", class_="year")
+                if _td_year is None:
+                    continue
+                _raw_year = _td_year.text
+                _td_title = i.find("td", class_="title")
+                if _td_title is None:
+                    continue
+                _raw_title = _td_title.find("a")
+                if _raw_title is None:
+                    continue
 
+                _td_center = i.find("td", class_="text-center")
                 r = {
                     "_slug": i["class"][0],
                     "year": _raw_year if _raw_year == "TBA" else int(_raw_year),
                     "title": {
-                        "link": urljoin(MYDRAMALIST_WEBSITE, _raw_title["href"]),
+                        "link": urljoin(MYDRAMALIST_WEBSITE, str(_raw_title.get("href", ""))),
                         "name": _raw_title.text,
                     },
                     "rating": self._handle_rating(
-                        i.find("td", class_="text-center").find(class_="text-sm")
+                        _td_center.find(class_="text-sm") if _td_center is not None else None
                     ),
                 }
 
@@ -237,26 +271,32 @@ class FetchPerson(BaseFetch):
 
                 # applicable only on dramas / tv-shows (this is different for non-actors)
                 try:
-                    _raw_role_name = _raw_role.find("div", class_="name").text.strip()
+                    _role_name_tag = _raw_role.find("div", class_="name") if _raw_role is not None else None
+                    _raw_role_name = _role_name_tag.text.strip() if _role_name_tag is not None else None
                 except Exception:
                     _raw_role_name = None
 
                 # use `type` for non-dramas, etc while `role` otherwise
                 try:
-                    if j in FetchPerson.non_actors:
-                        r["type"] = _raw_role.find(class_="roleid").text.strip()
-                    else:
-                        r["role"] = {
-                            "name": _raw_role_name,
-                            "type": _raw_role.find("div", class_="roleid").text.strip(),
-                        }
+                    if _raw_role is not None:
+                        if j in FetchPerson.non_actors:
+                            _roleid_tag = _raw_role.find(class_="roleid")
+                            if _roleid_tag is not None:
+                                r["type"] = _roleid_tag.text.strip()
+                        else:
+                            _roleid_tag = _raw_role.find("div", class_="roleid")
+                            r["role"] = {
+                                "name": _raw_role_name,
+                                "type": _roleid_tag.text.strip() if _roleid_tag is not None else "",
+                            }
                 except Exception:
                     pass
 
                 # not applicable for movies
                 try:
-                    episodes = i.find("td", class_="episodes").text
-                    r["episodes"] = int(episodes)
+                    _episodes_td = i.find("td", class_="episodes")
+                    if _episodes_td is not None:
+                        r["episodes"] = int(_episodes_td.text)
                 except Exception:
                     pass
 
@@ -285,18 +325,22 @@ class FetchCast(BaseFetch):
         # these are the most important drama infos / details
 
         # TITLE
-        self.info["title"] = (
-            container.find("h1", class_="film-title").get_text().strip()
-        )
+        _film_title = container.find("h1", class_="film-title")
+        if _film_title is None:
+            return
+        self.info["title"] = _film_title.get_text().strip()
 
         # POSTER
         self.info["poster"] = self._get_poster(container)
 
         # CASTS?
         self.info["casts"] = {}
-        __casts_container = container.find("div", class_="box cast-credits").find(
-            "div", class_="box-body"
-        )
+        _cast_credits = container.find("div", class_="box cast-credits")
+        if _cast_credits is None:
+            return
+        __casts_container = _cast_credits.find("div", class_="box-body")
+        if __casts_container is None:
+            return
 
         __temp_cast_headers = __casts_container.find_all("h3")
         __temp_cast_lists = __casts_container.find_all("ul")
@@ -305,9 +349,12 @@ class FetchCast(BaseFetch):
             casts = []
             for i in k.find_all("li"):
                 __temp_cast = i.find("a", class_="text-primary")
-                __temp_cast_slug = __temp_cast["href"].strip()
+                if __temp_cast is None:
+                    continue
+                __temp_cast_slug = str(__temp_cast.get("href", "")).strip()
+                _b = __temp_cast.find("b")
                 __temp_cast_data = {
-                    "name": __temp_cast.find("b").text.strip(),
+                    "name": _b.text.strip() if _b is not None else "",
                     "profile_image": self._get_poster(i).replace(
                         "s.jpg", "m.jpg"
                     ),  # replaces the small images to a link with a bigger one
@@ -316,10 +363,13 @@ class FetchCast(BaseFetch):
                 }
 
                 try:
-                    __temp_cast_data["role"] = {
-                        "name": i.find("small").text.strip(),
-                        "type": i.find("small", class_="text-muted").text.strip(),
-                    }
+                    _small = i.find("small")
+                    _small_muted = i.find("small", class_="text-muted")
+                    if _small is not None and _small_muted is not None:
+                        __temp_cast_data["role"] = {
+                            "name": _small.text.strip(),
+                            "type": _small_muted.text.strip(),
+                        }
                 except Exception:
                     pass
 
@@ -347,9 +397,10 @@ class FetchReviews(BaseFetch):
         # these are the most important drama infos / details
 
         # TITLE
-        self.info["title"] = (
-            container.find("h1", class_="film-title").get_text().strip()
-        )
+        _film_title = container.find("h1", class_="film-title")
+        if _film_title is None:
+            return
+        self.info["title"] = _film_title.get_text().strip()
 
         # POSTER
         self.info["poster"] = self._get_poster(container)
@@ -363,21 +414,29 @@ class FetchReviews(BaseFetch):
 
             try:
                 # reviewer / person
+                _reviewer_a = i.find("a")
+                if _reviewer_a is None:
+                    raise ValueError("no reviewer anchor")
+                _user_stats = i.find("div", class_="user-stats")
                 __temp_review["reviewer"] = {
-                    "name": i.find("a").text.strip(),
-                    "user_link": urljoin(MYDRAMALIST_WEBSITE, i.find("a")["href"]),
+                    "name": _reviewer_a.text.strip(),
+                    "user_link": urljoin(MYDRAMALIST_WEBSITE, str(_reviewer_a.get("href", ""))),
                     "user_image": self._get_poster(i).replace(
                         "1t", "1c"
                     ),  # replace 1t to 1c so that it will return a bigger image than the smaller one
-                    "info": i.find("div", class_="user-stats").text.strip(),
+                    "info": _user_stats.text.strip() if _user_stats is not None else "",
                 }
 
                 __temp_review_ratings = i.find(
                     "div", class_="box pull-right text-sm m-a-sm"
                 )
+                if __temp_review_ratings is None:
+                    raise ValueError("no review ratings")
                 __temp_review_ratings_overall = __temp_review_ratings.find(
                     "div", class_="rating-overall"
                 )
+                if __temp_review_ratings_overall is None:
+                    raise ValueError("no review ratings overall")
 
                 # start parsing the review section
                 __temp_review_contents = []
@@ -385,9 +444,11 @@ class FetchReviews(BaseFetch):
                 __temp_review_container = i.find(
                     "div", class_=re.compile("review-body")
                 )
+                if __temp_review_container is None:
+                    raise ValueError("no review body")
 
                 __temp_review_spoiler = __temp_review_container.find(
-                    "div", "review-spoiler"
+                    "div", class_="review-spoiler"
                 )
                 if __temp_review_spoiler is not None:
                     __temp_review_contents.append(__temp_review_spoiler.text.strip())
@@ -398,10 +459,12 @@ class FetchReviews(BaseFetch):
 
                 __temp_review_read_more = __temp_review_container.find(
                     "p", class_="read-more"
-                ).text.strip()
+                )
+                _read_more_text = __temp_review_read_more.text.strip() if __temp_review_read_more is not None else ""
                 __temp_review_vote = __temp_review_container.find(
                     "div", class_="review-helpful"
-                ).text.strip()
+                )
+                _vote_text = __temp_review_vote.text.strip() if __temp_review_vote is not None else ""
 
                 for i in __temp_review_container.find_all("br"):
                     i.replace_with("\n")
@@ -410,8 +473,8 @@ class FetchReviews(BaseFetch):
                     __temp_review_container.text.replace(
                         __temp_review_ratings.text.strip(), ""
                     )
-                    .replace(__temp_review_read_more, "")
-                    .replace(__temp_review_vote, "")
+                    .replace(_read_more_text, "")
+                    .replace(_vote_text, "")
                 )
 
                 if __temp_review_spoiler is not None:
@@ -427,20 +490,23 @@ class FetchReviews(BaseFetch):
                 __temp_review["review"] = __temp_review_contents
                 # end parsing the review section
 
+                _overall_span = __temp_review_ratings_overall.find("span")
                 __temp_review["ratings"] = {
-                    "overall": float(
-                        __temp_review_ratings_overall.find("span").text.strip()
-                    )
+                    "overall": float(_overall_span.text.strip()) if _overall_span is not None else 0.0
                 }
-                __temp_review_ratings_others = __temp_review_ratings.find(
+                _review_rating_div = __temp_review_ratings.find(
                     "div", class_="review-rating"
-                ).find_all("div")
+                )
+                __temp_review_ratings_others = _review_rating_div.find_all("div") if _review_rating_div is not None else []
 
                 # other review ratings, it might be different in each box?
                 for k in __temp_review_ratings_others:
+                    _span = k.find("span")
+                    if _span is None:
+                        continue
                     __temp_review["ratings"][
-                        k.text.replace(k.find("span").text.strip(), "").strip()
-                    ] = float(k.find("span").text.strip())
+                        k.text.replace(_span.text.strip(), "").strip()
+                    ] = float(_span.text.strip())
 
             except Exception as e:
                 print(e)
@@ -476,35 +542,32 @@ class FetchDramaList(BaseFetch):
 
         self.info["list"] = items
 
-    def _parse_title(self, item: BeautifulSoup) -> str:
+    def _parse_title(self, item: Tag) -> str:
         label = item.find("h3", class_="mdl-style-list-label")
         if label is None:
             return ""
 
         return label.get_text(strip=True)
 
-    def _parse_total_stats(self, item: BeautifulSoup) -> Dict[str, str]:
+    def _parse_total_stats(self, item: Tag) -> Dict[str, str]:
         drama_stats = item.find("label", class_="mdl-style-dramas")
         tvshows_stats = item.find("label", class_="mdl-style-tvshows")
         episodes_stats = item.find("label", class_="mdl-style-episodes")
         movies_stats = item.find("label", class_="mdl-style-movies")
         days_stats = item.find("label", class_="mdl-style-days")
 
-        return {
-            label.find("span", class_="name").get_text(strip=True): label.find(
-                "span", class_="cnt"
-            ).get_text(strip=True)
-            for label in [
-                drama_stats,
-                tvshows_stats,
-                episodes_stats,
-                movies_stats,
-                days_stats,
-            ]
-            if label is not None
-        }
+        result: Dict[str, str] = {}
+        for label in [drama_stats, tvshows_stats, episodes_stats, movies_stats, days_stats]:
+            if label is None:
+                continue
+            name_span = label.find("span", class_="name")
+            cnt_span = label.find("span", class_="cnt")
+            if name_span is None or cnt_span is None:
+                continue
+            result[name_span.get_text(strip=True)] = cnt_span.get_text(strip=True)
+        return result
 
-    def _parse_drama(self, item: BeautifulSoup) -> List[Dict[str, str]]:
+    def _parse_drama(self, item: Tag) -> List[Dict[str, str]]:
         item_names = item.find_all("a", class_="title")
         item_scores = item.find_all("span", class_="score")
         item_episode_seens = item.find_all("span", class_="episode-seen")
@@ -520,7 +583,7 @@ class FetchDramaList(BaseFetch):
         ):
             parsed_item = {
                 "name": name.get_text(strip=True),
-                "id": name.get("href", "").split("/")[-1],
+                "id": str(name.get("href", "")).split("/")[-1],
                 "score": score.get_text(strip=True),
                 "episode_seen": seen.get_text(strip=True),
                 "episode_total": total.get_text(strip=True),
@@ -547,7 +610,12 @@ class FetchList(BaseFetch):
 
         # get list title
         header = container.find("div", class_="box-header")
-        self.info["title"] = header.find("h1").get_text().strip()
+        if header is None:
+            return
+        _h1 = header.find("h1")
+        if _h1 is None:
+            return
+        self.info["title"] = _h1.get_text().strip()
 
         description = header.find("div", class_="description")
         self.info["description"] = (
@@ -556,10 +624,15 @@ class FetchList(BaseFetch):
 
         # get list
         container_list = container.find("div", class_="collection-list")
+        if container_list is None:
+            return
         all_items = container_list.find_all("li")
         list_items = []
         for i in all_items:
-            i_url = i.find("a").get("href")
+            _a = i.find("a")
+            if _a is None:
+                continue
+            i_url = str(_a.get("href", ""))
             if "/people/" in i_url:
                 list_items.append(self._parse_person(i))
                 continue
@@ -568,7 +641,7 @@ class FetchList(BaseFetch):
 
         self.info["list"] = list_items
 
-    def _parse_person(self, item: BeautifulSoup) -> Dict[str, Any]:
+    def _parse_person(self, item: Tag) -> Dict[str, Any]:
         # parse person image
         person_img_container = item.find("img", class_="img-responsive")
         if person_img_container is None:
@@ -593,8 +666,17 @@ class FetchList(BaseFetch):
                 "slug": "",
                 "url": "",
             }
-        person_name = item_header.find("a").get_text().strip()
-        person_slug = item_header.find("a").get("href")
+        _person_a = item_header.find("a")
+        if _person_a is None:
+            return {
+                "name": "",
+                "type": "person",
+                "image": person_img,
+                "slug": "",
+                "url": "",
+            }
+        person_name = _person_a.get_text().strip()
+        person_slug = str(_person_a.get("href", ""))
         person_url = urljoin(MYDRAMALIST_WEBSITE, person_slug)
 
         person_nationality_container = item.find(class_="text-muted")
@@ -618,7 +700,7 @@ class FetchList(BaseFetch):
             "details": person_details,
         }
 
-    def _parse_show(self, item: BeautifulSoup) -> Dict[str, Any]:
+    def _parse_show(self, item: Tag) -> Dict[str, Any]:
         # parse list image
         list_img_container = item.find("img", class_="img-responsive")
         if list_img_container is None:
@@ -647,12 +729,25 @@ class FetchList(BaseFetch):
                 "episodes": None,
                 "short_summary": "",
             }
-        list_title = list_header.find("a").get_text().strip()
+        _list_a = list_header.find("a")
+        if _list_a is None:
+            return {
+                "title": "",
+                "image": list_img,
+                "rank": "",
+                "url": "",
+                "slug": "",
+                "type": "",
+                "year": "",
+                "episodes": None,
+                "short_summary": "",
+            }
+        list_title = _list_a.get_text().strip()
         list_title_rank = (
             list_header.get_text().replace(list_title, "").strip().strip(".")
         )
-        list_url = urljoin(MYDRAMALIST_WEBSITE, list_header.find("a").get("href"))
-        list_slug = list_header.find("a").get("href")
+        list_url = urljoin(MYDRAMALIST_WEBSITE, str(_list_a.get("href", "")))
+        list_slug = _list_a.get("href")
 
         # parse example: `Korean Drama - 2020, 16 episodes`
         list_details_container = item.find(class_="text-muted")  # could be `p` or `div`
@@ -716,7 +811,7 @@ class FetchEpisodes(BaseFetch):
             "episodes": episodes,
         }
 
-    def _parse_episodes(self, item: BeautifulSoup) -> List[Dict[str, Any]]:
+    def _parse_episodes(self, item: Tag) -> List[Dict[str, Any]]:
         episodes_container = item.find("div", class_="episodes")
         if episodes_container is None:
             return []
@@ -727,21 +822,28 @@ class FetchEpisodes(BaseFetch):
 
         episodes = []
         for epi in epi_list:
-            title = epi.find("h2", class_="title").get_text(strip=True)
+            _title_tag = epi.find("h2", class_="title")
+            if _title_tag is None:
+                continue
+            title = _title_tag.get_text(strip=True)
 
             cover = epi.find("div", class_="cover")
-            img = cover.find("img")["data-src"]
-            link = urljoin(MYDRAMALIST_WEBSITE, cover.find("a")["href"])
+            if cover is None:
+                continue
+            _img_tag = cover.find("img")
+            img = str(_img_tag.get("data-src", "")) if _img_tag is not None else ""
+            _a_tag = cover.find("a")
+            link = urljoin(MYDRAMALIST_WEBSITE, str(_a_tag.get("href", ""))) if _a_tag is not None else ""
 
-            rating = (
-                epi.find("div", class_="rating-panel m-b-0")
-                .find("div")
-                .get_text(strip=True)
-            )
+            _rating_panel = epi.find("div", class_="rating-panel m-b-0")
+            _rating_div = _rating_panel.find("div") if _rating_panel is not None else None
+            rating = _rating_div.get_text(strip=True) if _rating_div is not None else ""
 
             air_date: str | None = None
             try:
-                air_date = epi.find("div", class_="air-date").get_text(strip=True)
+                _air_date_tag = epi.find("div", class_="air-date")
+                if _air_date_tag is not None:
+                    air_date = _air_date_tag.get_text(strip=True)
             except Exception:
                 pass
 
@@ -757,7 +859,7 @@ class FetchEpisodes(BaseFetch):
 
         return episodes
 
-    def _parse_title(self, item: BeautifulSoup) -> str:
+    def _parse_title(self, item: Tag) -> str:
         title_container = item.find("h1", class_="film-title")
 
         return title_container.get_text(strip=True) if title_container else ""

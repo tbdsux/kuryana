@@ -38,6 +38,8 @@ class Search(BaseSearch):
                 return None
 
             ranking = ranking_container.find("span")
+            if ranking is None:
+                return None
         except AttributeError:
             return None  # return None if the result doesn't have it
 
@@ -77,8 +79,8 @@ class Search(BaseSearch):
     def _res_get_url(self, result_container: Union[Tag, NavigableString]) -> str:
         return urljoin(
             MYDRAMALIST_WEBSITE,
-            result_container.find("h6", class_="text-primary title")  # type: ignore
-            .find("a")["href"]  # type: ignore
+            str(result_container.find("h6", class_="text-primary title")  # type: ignore
+            .find("a")["href"])  # type: ignore
             .replace("/", ""),
         )
 
