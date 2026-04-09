@@ -100,7 +100,7 @@ async def mdlSeasonal(year: int, quarter: int) -> Any:
     # quarter -> every 3 months (Jan-Mar=1, Apr-Jun=2, Jul-Sep=3, Oct-Dec=4)
     # --- seasonal information --- winter --- spring --- summer --- fall ---
 
-    client = primp.Client(impersonate="chrome_131", impersonate_os="linux")
+    client = primp.Client(impersonate="chrome", impersonate_os="linux")
 
     return client.post(
         "https://mydramalist.com/v1/quarter_calendar",
@@ -111,7 +111,7 @@ async def mdlSeasonal(year: int, quarter: int) -> Any:
 # get episode schedule
 @app.get("/schedule")
 async def mdlSchedule(response: Response) -> Any:
-    client = primp.Client(impersonate="chrome_131", impersonate_os="linux")
+    client = primp.Client(impersonate="chrome", impersonate_os="linux")
 
     r = client.post("https://mydramalist.com/v1/episode_calendar?lang=en-US")
 

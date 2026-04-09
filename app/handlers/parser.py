@@ -22,7 +22,6 @@ class Parser:
 
     headers: Dict[str, str] = {
         "Referer": MYDRAMALIST_WEBSITE,
-        "User-Agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.123 Mobile Safari/537.36",
     }
 
     def __init__(
@@ -48,14 +47,17 @@ class Parser:
         soup = None
 
         try:
-            client = primp.Client(impersonate="chrome_131", impersonate_os="linux")
-            resp = client.get(url, headers=Parser.headers)
+            client = primp.Client(impersonate="chrome", impersonate_os="linux")
+            resp = client.get(url)
 
             # set the main soup var
             soup = BeautifulSoup(
                 resp.text,
                 "html.parser",  # use `lxml` parser for better speed
             )
+
+            res = resp.text
+            print(res)
 
             # set the status code
             code = resp.status_code
@@ -82,18 +84,16 @@ class Parser:
             return err
 
         try:
-            err["code"] = self.status_code
-            err["error"] = True
-            err["description"] = {
-                "title": container.find("div", class_="box-body")
-                .find("h1")
-                .get_text()
-                .strip(),
-                "info": container.find("div", class_="box-body")
-                .find("p")
-                .get_text()
-                .strip(),
-            }
+            box_body = container.find("div", class_="box-body")
+            if box_body is not None:
+                err["code"] = self.status_code
+                err["error"] = True
+                h1_elem = box_body.find("h1")
+                p_elem = box_body.find("p")
+                err["description"] = {
+                    "title": h1_elem.get_text().strip() if h1_elem else "",
+                    "info": p_elem.get_text().strip() if p_elem else "",
+                }
 
         except Exception:
             pass
@@ -163,7 +163,10 @@ class BaseFetch(Parser):
 
             for i in all_details:
                 # get each li from <ul>
-                _title = i.find("b").text.strip()
+                b_tag = i.find("b")
+                if b_tag is None:
+                    continue
+                _title = b_tag.text.strip()
 
                 # append each to sub object
                 self.info["details"][
@@ -178,8 +181,10 @@ class BaseFetch(Parser):
 
     # rating handler, (since it could be N/A which is not convertable to float)
     def _handle_rating(
-        self, component: Union[Tag, NavigableString]
+        self, component: Union[Tag, NavigableString, None]
     ) -> Union[str, float, Any]:
+        if component is None:
+            return ""
         try:
             return float(component.text)
         except Exception:
