@@ -94,6 +94,11 @@ class FetchDrama(BaseFetch):
         self.info["casts"] = casts
 
         # Extract nextEpisodeAiring
+        self._extract_next_episode_airing()
+
+    def _extract_next_episode_airing(self) -> None:
+        if self.soup is None:
+            return
         scripts = self.soup.find_all("script", type="text/javascript")
         for script in scripts:
             if script.string and "var nextEpisodeAiring =" in script.string:
@@ -135,31 +140,7 @@ class FetchDrama(BaseFetch):
                 _title_key = _title.replace(":", "").replace(" ", "_").lower()
 
                 if _title_key == "related_content":
-                    _related_content_titles = i.find_all("div", class_="title")
-                    for rl in _related_content_titles:
-                        rl_href = rl.find("a")
-                        if rl_href is None:
-                            # If no link, just get the text and continue
-                            rl_title = rl.text.strip()
-                            rl_extra_text = ""
-                            rl_link = ""
-                            rl_slug = ""
-                        else:
-                            rl_title = rl_href.text.strip()
-                            rl_extra_text = rl.text.replace(rl_title, "").strip()
-                            rl_slug = str(rl_href.get("href", "")).strip()
-                            rl_link = urljoin(MYDRAMALIST_WEBSITE, rl_slug)
-
-                        if "related_content" not in self.info["others"]:
-                            self.info["others"]["related_content"] = []
-                        self.info["others"]["related_content"].append(
-                            {
-                                "title": rl_title,
-                                "link": rl_link,
-                                "description": rl_extra_text,
-                                "slug": rl_slug.replace("/", "")
-                            }
-                        )
+                    self._parse_related_content(i)
                     continue
                 else:
                     self.info["others"][
@@ -173,6 +154,32 @@ class FetchDrama(BaseFetch):
             # there was a problem while trying to parse
             # the :> other info section
             pass
+
+    def _parse_related_content(self, item: Tag) -> None:
+        _related_content_titles = item.find_all("div", class_="title")
+        for rl in _related_content_titles:
+            rl_href = rl.find("a")
+            if rl_href is None:
+                rl_title = rl.text.strip()
+                rl_extra_text = ""
+                rl_link = ""
+                rl_slug = ""
+            else:
+                rl_title = rl_href.text.strip()
+                rl_extra_text = rl.text.replace(rl_title, "").strip()
+                rl_slug = str(rl_href.get("href", "")).strip()
+                rl_link = urljoin(MYDRAMALIST_WEBSITE, rl_slug)
+
+            if "related_content" not in self.info["others"]:
+                self.info["others"]["related_content"] = []
+            self.info["others"]["related_content"].append(
+                {
+                    "title": rl_title,
+                    "link": rl_link,
+                    "description": rl_extra_text,
+                    "slug": rl_slug.replace("/", ""),
+                }
+            )
 
     # drama info details handler
     def _get(self) -> None:
@@ -231,77 +238,83 @@ class FetchPerson(BaseFetch):
             "div", class_="box-body"
         )[1]
 
-        # get all headers
+        self._parse_works_table(_works_container)
+
+    def _parse_work_role(self, r: Dict[str, Any], _raw_role: Any, j: str) -> None:
+        # applicable only on dramas / tv-shows (this is different for non-actors)
+        try:
+            _role_name_tag = _raw_role.find("div", class_="name") if _raw_role is not None else None
+            _raw_role_name = _role_name_tag.text.strip() if _role_name_tag is not None else None
+        except Exception:
+            _raw_role_name = None
+
+        # use `type` for non-dramas, etc while `role` otherwise
+        try:
+            if _raw_role is not None:
+                if j in FetchPerson.non_actors:
+                    _roleid_tag = _raw_role.find(class_="roleid")
+                    if _roleid_tag is not None:
+                        r["type"] = _roleid_tag.text.strip()
+                else:
+                    _roleid_tag = _raw_role.find("div", class_="roleid")
+                    r["role"] = {
+                        "name": _raw_role_name,
+                        "type": _roleid_tag.text.strip() if _roleid_tag is not None else "",
+                    }
+        except Exception:
+            pass
+
+    def _parse_work_row(self, i: Tag, j: str) -> Dict[str, Any] | None:
+        _td_year = i.find("td", class_="year")
+        if _td_year is None:
+            return None
+        _raw_year = _td_year.text
+        _td_title = i.find("td", class_="title")
+        if _td_title is None:
+            return None
+        _raw_title = _td_title.find("a")
+        if _raw_title is None:
+            return None
+
+        _td_center = i.find("td", class_="text-center")
+        r: Dict[str, Any] = {
+            "_slug": i["class"][0],
+            "year": _raw_year if _raw_year == "TBA" else int(_raw_year),
+            "title": {
+                "link": urljoin(MYDRAMALIST_WEBSITE, str(_raw_title.get("href", ""))),
+                "name": _raw_title.text,
+            },
+            "rating": self._handle_rating(
+                _td_center.find(class_="text-sm") if _td_center is not None else None
+            ),
+        }
+
+        _raw_role = i.find("td", class_="role")
+        self._parse_work_role(r, _raw_role, j)
+
+        # not applicable for movies
+        try:
+            _episodes_td = i.find("td", class_="episodes")
+            if _episodes_td is not None:
+                r["episodes"] = int(_episodes_td.text)
+        except Exception:
+            pass
+
+        return r
+
+    def _parse_works_table(self, _works_container: Tag) -> None:
         _work_headers = [i.text.strip() for i in _works_container.find_all("h5")]
         _work_tables = _works_container.find_all("table")
 
         for j, k in zip(_work_headers, _work_tables, strict=False):
-            # theaders = ['episodes' if i.text.strip() == '#' else i.text.strip() for i in k.find("thead").find_all("th")]
             bare_works: List[Dict[str, Any]] = []
-
             _tbody = k.find("tbody")
             if _tbody is None:
                 continue
             for i in _tbody.find_all("tr"):
-                _td_year = i.find("td", class_="year")
-                if _td_year is None:
-                    continue
-                _raw_year = _td_year.text
-                _td_title = i.find("td", class_="title")
-                if _td_title is None:
-                    continue
-                _raw_title = _td_title.find("a")
-                if _raw_title is None:
-                    continue
-
-                _td_center = i.find("td", class_="text-center")
-                r = {
-                    "_slug": i["class"][0],
-                    "year": _raw_year if _raw_year == "TBA" else int(_raw_year),
-                    "title": {
-                        "link": urljoin(MYDRAMALIST_WEBSITE, str(_raw_title.get("href", ""))),
-                        "name": _raw_title.text,
-                    },
-                    "rating": self._handle_rating(
-                        _td_center.find(class_="text-sm") if _td_center is not None else None
-                    ),
-                }
-
-                _raw_role = i.find("td", class_="role")
-
-                # applicable only on dramas / tv-shows (this is different for non-actors)
-                try:
-                    _role_name_tag = _raw_role.find("div", class_="name") if _raw_role is not None else None
-                    _raw_role_name = _role_name_tag.text.strip() if _role_name_tag is not None else None
-                except Exception:
-                    _raw_role_name = None
-
-                # use `type` for non-dramas, etc while `role` otherwise
-                try:
-                    if _raw_role is not None:
-                        if j in FetchPerson.non_actors:
-                            _roleid_tag = _raw_role.find(class_="roleid")
-                            if _roleid_tag is not None:
-                                r["type"] = _roleid_tag.text.strip()
-                        else:
-                            _roleid_tag = _raw_role.find("div", class_="roleid")
-                            r["role"] = {
-                                "name": _raw_role_name,
-                                "type": _roleid_tag.text.strip() if _roleid_tag is not None else "",
-                            }
-                except Exception:
-                    pass
-
-                # not applicable for movies
-                try:
-                    _episodes_td = i.find("td", class_="episodes")
-                    if _episodes_td is not None:
-                        r["episodes"] = int(_episodes_td.text)
-                except Exception:
-                    pass
-
-                bare_works.append(r)
-
+                row = self._parse_work_row(i, j)
+                if row is not None:
+                    bare_works.append(row)
             self.info["works"][j] = bare_works
 
     def _get(self) -> None:
@@ -346,36 +359,38 @@ class FetchCast(BaseFetch):
         __temp_cast_lists = __casts_container.find_all("ul")
 
         for j, k in zip(__temp_cast_headers, __temp_cast_lists, strict=False):
-            casts = []
-            for i in k.find_all("li"):
-                __temp_cast = i.find("a", class_="text-primary")
-                if __temp_cast is None:
-                    continue
-                __temp_cast_slug = str(__temp_cast.get("href", "")).strip()
-                _b = __temp_cast.find("b")
-                __temp_cast_data = {
-                    "name": _b.text.strip() if _b is not None else "",
-                    "profile_image": self._get_poster(i).replace(
-                        "s.jpg", "m.jpg"
-                    ),  # replaces the small images to a link with a bigger one
-                    "slug": __temp_cast_slug,
-                    "link": urljoin(MYDRAMALIST_WEBSITE, __temp_cast_slug),
-                }
+            self.info["casts"][j.text.strip()] = self._parse_cast_group(k)
 
-                try:
-                    _small = i.find("small")
-                    _small_muted = i.find("small", class_="text-muted")
-                    if _small is not None and _small_muted is not None:
-                        __temp_cast_data["role"] = {
-                            "name": _small.text.strip(),
-                            "type": _small_muted.text.strip(),
-                        }
-                except Exception:
-                    pass
+    def _parse_cast_group(self, k: Tag) -> List[Dict[str, Any]]:
+        casts = []
+        for i in k.find_all("li"):
+            __temp_cast = i.find("a", class_="text-primary")
+            if __temp_cast is None:
+                continue
+            __temp_cast_slug = str(__temp_cast.get("href", "")).strip()
+            _b = __temp_cast.find("b")
+            __temp_cast_data = {
+                "name": _b.text.strip() if _b is not None else "",
+                "profile_image": self._get_poster(i).replace(
+                    "s.jpg", "m.jpg"
+                ),  # replaces the small images to a link with a bigger one
+                "slug": __temp_cast_slug,
+                "link": urljoin(MYDRAMALIST_WEBSITE, __temp_cast_slug),
+            }
 
-                casts.append(__temp_cast_data)
+            try:
+                _small = i.find("small")
+                _small_muted = i.find("small", class_="text-muted")
+                if _small is not None and _small_muted is not None:
+                    __temp_cast_data["role"] = {
+                        "name": _small.text.strip(),
+                        "type": _small_muted.text.strip(),
+                    }
+            except Exception:
+                pass
 
-            self.info["casts"][j.text.strip()] = casts
+            casts.append(__temp_cast_data)
+        return casts
 
     def _get(self) -> None:
         self._get_main_container()
