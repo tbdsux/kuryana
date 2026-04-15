@@ -56,9 +56,6 @@ class Parser:
                 "html.parser",  # use `lxml` parser for better speed
             )
 
-            res = resp.text
-            print(res)
-
             # set the status code
             code = resp.status_code
             ok = resp.status_code == 200

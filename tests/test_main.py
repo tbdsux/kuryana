@@ -18,13 +18,13 @@ def test_sample_drama() -> None:
         {
             "id": "18452-goblin",
             "expected": {
-                "title": "Guardian: The Lonely and Great God",
-                "complete_title": "Guardian: The Lonely and Great God",
+                "title": "Guardian: The Lonely and Great God (2016)",
+                "complete_title": "Guardian: The Lonely and Great God (2016)",
             },
         },
         {
             "id": "58953-mouse",
-            "expected": {"title": "Mouse", "complete_title": "Mouse"},
+            "expected": {"title": "Mouse (2021)", "complete_title": "Mouse (2021)"},
         },
     ]
 
