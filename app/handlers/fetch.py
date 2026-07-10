@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from typing import Any, Dict, List
 from urllib.parse import urljoin
@@ -8,6 +9,8 @@ from bs4.element import Tag
 
 from app import MYDRAMALIST_WEBSITE
 from app.handlers.parser import BaseFetch
+
+logger = logging.getLogger(__name__)
 
 
 class FetchDrama(BaseFetch):
@@ -21,6 +24,10 @@ class FetchDrama(BaseFetch):
 
         container = self.soup.find("div", class_="app-body")
         if container is None:
+            logger.warning(
+                "app-body not found for drama %s — page structure may have changed or CF blocked",
+                self.query,
+            )
             return
 
         # append scraped data
@@ -32,6 +39,7 @@ class FetchDrama(BaseFetch):
         # Complete Title = Goblin (2016)
         film_title = container.find("h1", class_="film-title")
         if film_title is None:
+            logger.warning("film-title not found for drama %s", self.query)
             return
         self.info["title"] = film_title.get_text().strip()
         self.info["complete_title"] = film_title.get_text().strip()
@@ -154,10 +162,8 @@ class FetchDrama(BaseFetch):
                         for i in i.text.replace(_title + " ", "").strip().split(", ")
                     ]
 
-        except Exception:
-            # there was a problem while trying to parse
-            # the :> other info section
-            pass
+        except Exception as exc:
+            logger.debug("_get_other_info failed for %s: %s", self.query, exc)
 
     def _parse_related_content(self, item: Tag) -> None:
         _related_content_titles = item.find_all("div", class_="title")
@@ -204,6 +210,10 @@ class FetchPerson(BaseFetch):
 
         container = self.soup.find("div", class_="app-body")
         if container is None:
+            logger.warning(
+                "app-body not found for person %s — page structure may have changed or CF blocked",
+                self.query,
+            )
             return
 
         # append scraped data
@@ -212,6 +222,7 @@ class FetchPerson(BaseFetch):
         # NAME
         _film_title = container.find("h1", class_="film-title")
         if _film_title is None:
+            logger.warning("film-title not found for person %s", self.query)
             return
         self.info["name"] = _film_title.get_text().strip()
 
@@ -251,7 +262,8 @@ class FetchPerson(BaseFetch):
             _raw_role_name = (
                 _role_name_tag.text.strip() if _role_name_tag is not None else None
             )
-        except Exception:
+        except Exception as exc:
+            logger.debug("role name parsing failed for %s: %s", self.query, exc)
             _raw_role_name = None
 
         # use `type` for non-dramas, etc while `role` otherwise
@@ -269,8 +281,8 @@ class FetchPerson(BaseFetch):
                         if _roleid_tag is not None
                         else "",
                     }
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("role type parsing failed for %s: %s", self.query, exc)
 
     def _parse_work_row(self, i: Tag, j: str) -> Dict[str, Any] | None:
         _td_year = i.find("td", class_="year")
@@ -305,8 +317,8 @@ class FetchPerson(BaseFetch):
             _episodes_td = i.find("td", class_="episodes")
             if _episodes_td is not None:
                 r["episodes"] = int(_episodes_td.text)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("episodes count parsing failed for %s: %s", self.query, exc)
 
         return r
 
@@ -340,6 +352,10 @@ class FetchCast(BaseFetch):
 
         container = self.soup.find("div", class_="app-body")
         if container is None:
+            logger.warning(
+                "app-body not found for cast %s — page structure may have changed or CF blocked",
+                self.query,
+            )
             return
 
         # append scraped data
@@ -348,6 +364,7 @@ class FetchCast(BaseFetch):
         # TITLE
         _film_title = container.find("h1", class_="film-title")
         if _film_title is None:
+            logger.warning("film-title not found for cast %s", self.query)
             return
         self.info["title"] = _film_title.get_text().strip()
 
@@ -394,8 +411,8 @@ class FetchCast(BaseFetch):
                         "name": _small.text.strip(),
                         "type": _small_muted.text.strip(),
                     }
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("cast role parsing failed for %s: %s", self.query, exc)
 
             casts.append(__temp_cast_data)
         return casts
@@ -547,10 +564,8 @@ class FetchReviews(BaseFetch):
                         k.text.replace(_span.text.strip(), "").strip()
                     ] = float(_span.text.strip())
 
-            except Exception as e:
-                print(e)
-                # if failed to parse, do nothing
-                pass
+            except Exception as exc:
+                logger.debug("review parsing failed for %s: %s", self.query, exc)
 
             # append to list
             self.info["reviews"].append(__temp_review)
@@ -836,8 +851,8 @@ class FetchList(BaseFetch):
         self._get_main_container()
 
 
-class FetchEpisodes(BaseFetch):
-    def __init__(self, soup, query, code, ok):
+class FetchPhotos(BaseFetch):
+    def __init__(self, soup: BeautifulSoup, query: str, code: int, ok: bool) -> None:
         super().__init__(soup, query, code, ok)
 
     def _get_main_container(self) -> None:
@@ -848,13 +863,87 @@ class FetchEpisodes(BaseFetch):
         if container is None:
             return
 
+        _film_title = container.find("h1", class_="film-title")
+        if _film_title is not None:
+            self.info["title"] = _film_title.get_text().strip()
+
+        photos: List[Dict[str, Any]] = []
+
+        _photos_ul = container.find("ul", class_=re.compile(r"photos"))
+        if _photos_ul is None:
+            _photos_ul = container.find("div", class_=re.compile(r"photos"))
+
+        if _photos_ul is not None:
+            items = _photos_ul.find_all("li") or _photos_ul.find_all(
+                "div", recursive=False
+            )
+            for item in items:
+                _a = item.find("a")
+                _img = item.find("img")
+
+                photo: Dict[str, Any] = {}
+
+                if _a is not None:
+                    href = str(_a.get("href", "")).strip()
+                    if href:
+                        photo["link"] = urljoin(MYDRAMALIST_WEBSITE, href)
+
+                if _img is not None:
+                    for attr in self._img_attrs:
+                        if _img.has_attr(attr):
+                            thumb = str(_img[attr])
+                            photo["image"] = thumb
+                            photo["full_image"] = thumb.replace("m.jpg", "f.jpg")
+                            break
+
+                if photo:
+                    photos.append(photo)
+
+        # fallback: collect all anchored images inside the body that look like photo entries
+        if not photos:
+            for _a in container.find_all("a", href=re.compile(r"/photos/")):
+                _img = _a.find("img")
+                photo = {
+                    "link": urljoin(
+                        MYDRAMALIST_WEBSITE, str(_a.get("href", "")).strip()
+                    )
+                }
+                if _img is not None:
+                    for attr in self._img_attrs:
+                        if _img.has_attr(attr):
+                            thumb = str(_img[attr])
+                            photo["image"] = thumb
+                            photo["full_image"] = thumb.replace("m.jpg", "f.jpg")
+                            break
+                photos.append(photo)
+
+        self.info["photos"] = photos
+
+    def _get(self) -> None:
+        self._get_main_container()
+
+
+class FetchEpisodes(BaseFetch):
+    def __init__(self, soup, query, code, ok):
+        super().__init__(soup, query, code, ok)
+
+    def _get_main_container(self) -> None:
+        if self.soup is None:
+            return
+
+        container = self.soup.find("div", class_="app-body")
+        if container is None:
+            logger.warning(
+                "app-body not found for episodes %s — page structure may have changed or CF blocked",
+                self.query,
+            )
+            return
+
         title = self._parse_title(container)
         episodes = self._parse_episodes(container)
 
-        self.info = {
-            "title": title,
-            "episodes": episodes,
-        }
+        self.info["title"] = title
+        self.info["episodes"] = episodes
 
     def _parse_episodes(self, item: Tag) -> List[Dict[str, Any]]:
         episodes_container = item.find("div", class_="episodes")
@@ -895,8 +984,8 @@ class FetchEpisodes(BaseFetch):
                 _air_date_tag = epi.find("div", class_="air-date")
                 if _air_date_tag is not None:
                     air_date = _air_date_tag.get_text(strip=True)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("air_date parsing failed for %s: %s", self.query, exc)
 
             episodes.append(
                 {

@@ -67,16 +67,36 @@ GET /id/{mydramalist-slug}/episodes
 GET /id/{mydramalist-slug}/reviews
 ```
 
+- Get DRAMA Photos
+
+```sh
+GET /id/{mydramalist-slug}/photos
+```
+
 - Get Person(People) Info
 
 ```sh
 GET /people/{people-id}
 ```
 
-- Get seasonal drama
+- Get Person(People) Photos
+
+```sh
+GET /people/{people-id}/photos
+```
+
+- Get seasonal dramas by quarter
 
 ```sh
 GET /seasonal/{year}/{quarter}
+```
+
+> `quarter`: `1` = Jan–Mar · `2` = Apr–Jun · `3` = Jul–Sep · `4` = Oct–Dec
+
+- Get current week episode schedule
+
+```sh
+GET /schedule
 ```
 
 - Get Lists
@@ -204,7 +224,13 @@ if __name__ == "__main__":
 
 ### Dev Server
 
-Start development server.
+Start development server with hot reload.
+
+```sh
+uv run dev
+```
+
+Or using FastAPI CLI directly:
 
 ```sh
 uv run fastapi dev
