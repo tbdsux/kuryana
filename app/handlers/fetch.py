@@ -1,6 +1,7 @@
 import json
+import logging
 import re
-from typing import Any, Dict, List
+from typing import Any
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
@@ -8,6 +9,8 @@ from bs4.element import Tag
 
 from app import MYDRAMALIST_WEBSITE
 from app.handlers.parser import BaseFetch
+
+logger = logging.getLogger(__name__)
 
 
 class FetchDrama(BaseFetch):
@@ -242,7 +245,7 @@ class FetchPerson(BaseFetch):
 
         self._parse_works_table(_works_container)
 
-    def _parse_work_role(self, r: Dict[str, Any], _raw_role: Any, j: str) -> None:
+    def _parse_work_role(self, r: dict[str, Any], _raw_role: Any, j: str) -> None:
         # applicable only on dramas / tv-shows (this is different for non-actors)
         try:
             _role_name_tag = (
@@ -272,7 +275,7 @@ class FetchPerson(BaseFetch):
         except Exception:
             pass
 
-    def _parse_work_row(self, i: Tag, j: str) -> Dict[str, Any] | None:
+    def _parse_work_row(self, i: Tag, j: str) -> dict[str, Any] | None:
         _td_year = i.find("td", class_="year")
         if _td_year is None:
             return None
@@ -285,7 +288,7 @@ class FetchPerson(BaseFetch):
             return None
 
         _td_center = i.find("td", class_="text-center")
-        r: Dict[str, Any] = {
+        r: dict[str, Any] = {
             "_slug": i["class"][0],
             "year": _raw_year if _raw_year == "TBA" else int(_raw_year),
             "title": {
@@ -305,7 +308,7 @@ class FetchPerson(BaseFetch):
             _episodes_td = i.find("td", class_="episodes")
             if _episodes_td is not None:
                 r["episodes"] = int(_episodes_td.text)
-        except Exception:
+        except ValueError:
             pass
 
         return r
@@ -315,7 +318,7 @@ class FetchPerson(BaseFetch):
         _work_tables = _works_container.find_all("table")
 
         for j, k in zip(_work_headers, _work_tables, strict=False):
-            bare_works: List[Dict[str, Any]] = []
+            bare_works: list[dict[str, Any]] = []
             _tbody = k.find("tbody")
             if _tbody is None:
                 continue
@@ -369,7 +372,7 @@ class FetchCast(BaseFetch):
         for j, k in zip(__temp_cast_headers, __temp_cast_lists, strict=False):
             self.info["casts"][j.text.strip()] = self._parse_cast_group(k)
 
-    def _parse_cast_group(self, k: Tag) -> List[Dict[str, Any]]:
+    def _parse_cast_group(self, k: Tag) -> list[dict[str, Any]]:
         casts = []
         for i in k.find_all("li"):
             __temp_cast = i.find("a", class_="text-primary")
@@ -433,7 +436,7 @@ class FetchReviews(BaseFetch):
         __temp_reviews = container.find_all("div", class_="review")
 
         for i in __temp_reviews:
-            __temp_review: Dict[str, Any] = {}
+            __temp_review: dict[str, Any] = {}
 
             try:
                 # reviewer / person
@@ -547,10 +550,9 @@ class FetchReviews(BaseFetch):
                         k.text.replace(_span.text.strip(), "").strip()
                     ] = float(_span.text.strip())
 
-            except Exception as e:
-                print(e)
-                # if failed to parse, do nothing
-                pass
+            except Exception:
+                # if failed to parse, keep the review without ratings
+                logger.exception("failed to parse review ratings")
 
             # append to list
             self.info["reviews"].append(__temp_review)
@@ -588,14 +590,14 @@ class FetchDramaList(BaseFetch):
 
         return label.get_text(strip=True)
 
-    def _parse_total_stats(self, item: Tag) -> Dict[str, str]:
+    def _parse_total_stats(self, item: Tag) -> dict[str, str]:
         drama_stats = item.find("label", class_="mdl-style-dramas")
         tvshows_stats = item.find("label", class_="mdl-style-tvshows")
         episodes_stats = item.find("label", class_="mdl-style-episodes")
         movies_stats = item.find("label", class_="mdl-style-movies")
         days_stats = item.find("label", class_="mdl-style-days")
 
-        result: Dict[str, str] = {}
+        result: dict[str, str] = {}
         for label in [
             drama_stats,
             tvshows_stats,
@@ -612,30 +614,28 @@ class FetchDramaList(BaseFetch):
             result[name_span.get_text(strip=True)] = cnt_span.get_text(strip=True)
         return result
 
-    def _parse_drama(self, item: Tag) -> List[Dict[str, str]]:
+    def _parse_drama(self, item: Tag) -> list[dict[str, str]]:
         item_names = item.find_all("a", class_="title")
         item_scores = item.find_all("span", class_="score")
         item_episode_seens = item.find_all("span", class_="episode-seen")
         item_episode_totals = item.find_all("span", class_="episode-total")
 
-        parsed_data = []
-        for name, score, seen, total in zip(
-            item_names,
-            item_scores,
-            item_episode_seens,
-            item_episode_totals,
-            strict=False,
-        ):
-            parsed_item = {
+        return [
+            {
                 "name": name.get_text(strip=True),
                 "id": str(name.get("href", "")).split("/")[-1],
                 "score": score.get_text(strip=True),
                 "episode_seen": seen.get_text(strip=True),
                 "episode_total": total.get_text(strip=True),
             }
-            parsed_data.append(parsed_item)
-
-        return parsed_data
+            for name, score, seen, total in zip(
+                item_names,
+                item_scores,
+                item_episode_seens,
+                item_episode_totals,
+                strict=False,
+            )
+        ]
 
     def _get(self) -> None:
         self._get_main_container()
@@ -686,17 +686,13 @@ class FetchList(BaseFetch):
 
         self.info["list"] = list_items
 
-    def _parse_person(self, item: Tag) -> Dict[str, Any]:
+    def _parse_person(self, item: Tag) -> dict[str, Any]:
         # parse person image
         person_img_container = item.find("img", class_="img-responsive")
         if person_img_container is None:
             person_img_container = {}
         person_img_src = str(person_img_container.get("data-src", "")).split("/1280/")
-        person_img = ""
-        if len(person_img_src) > 1:
-            person_img = person_img_src[1]
-        else:
-            person_img = person_img_src[0]
+        person_img = person_img_src[1] if len(person_img_src) > 1 else person_img_src[0]
 
         person_img = person_img.replace(
             "s.jpg", "m.jpg"
@@ -745,17 +741,13 @@ class FetchList(BaseFetch):
             "details": person_details,
         }
 
-    def _parse_show(self, item: Tag) -> Dict[str, Any]:
+    def _parse_show(self, item: Tag) -> dict[str, Any]:
         # parse list image
         list_img_container = item.find("img", class_="img-responsive")
         if list_img_container is None:
             list_img_container = {}
         list_img_src = str(list_img_container.get("data-src", "")).split("/1280/")
-        list_img = ""
-        if len(list_img_src) > 1:
-            list_img = list_img_src[1]
-        else:
-            list_img = list_img_src[0]
+        list_img = list_img_src[1] if len(list_img_src) > 1 else list_img_src[0]
 
         list_img = list_img.replace(
             "t.jpg", "c.jpg"
@@ -856,7 +848,7 @@ class FetchEpisodes(BaseFetch):
             "episodes": episodes,
         }
 
-    def _parse_episodes(self, item: Tag) -> List[Dict[str, Any]]:
+    def _parse_episodes(self, item: Tag) -> list[dict[str, Any]]:
         episodes_container = item.find("div", class_="episodes")
         if episodes_container is None:
             return []
