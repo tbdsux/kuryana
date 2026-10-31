@@ -23,7 +23,7 @@ LIST_KEYS = {
     "original_network",
     "aired_on",
 }
-INT_KEYS = {"episodes", "ranked", "popularity", "watchers", "favorites", "age"}
+INT_KEYS = {"episodes", "ranked", "popularity", "watchers", "age"}
 
 
 # --- primitives ---
@@ -89,8 +89,9 @@ def _details(items: list[Tag]) -> dict[str, Any]:
     out: dict[str, Any] = {}
 
     for li in items:
+        # MDL ships hidden rows (e.g. "Favorites: 0") that aren't shown on the page
         b = li.find("b")
-        if b is None:
+        if b is None or "display:none" in str(li.get("style", "")).replace(" ", ""):
             continue
 
         key = _key(b.get_text().replace(":", ""))

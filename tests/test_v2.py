@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.v2.parsers import parse_dramalist
+from app.v2.parsers._helpers import _details
 
 client = TestClient(app)
 
@@ -35,6 +36,15 @@ def test_parse_dramalist_fixture() -> None:
         "episodes_seen": 4,
         "episodes_total": 16,
     }
+
+
+def test_details_skips_hidden_rows() -> None:
+    soup = BeautifulSoup(
+        '<li><b>Watchers:</b> 331,157</li>'
+        '<li style="display: none;"><b>Favorites:</b> 0</li>',
+        "lxml",
+    )
+    assert _details(soup.find_all("li")) == {"watchers": 331157}
 
 
 def test_search() -> None:
