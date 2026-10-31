@@ -1,15 +1,15 @@
 name: Deployment
 
 on:
-  push:
-    branches:
-      - master
   workflow_run:
     workflows: [CI]
     types: [completed]
+    branches: [main]
 
 jobs:
   deployment:
+    # only deploy pushes to main that passed CI, not PRs or failed runs
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
     environment: deploy
     steps:
@@ -23,5 +23,7 @@ jobs:
           script: |
             echo "Deploying kuryana..."
             cd ${{secrets.FOLDER_PATH}}
-            git pull origin master
+            git fetch origin
+            git checkout main
+            git pull origin main
             docker compose up -d --build
