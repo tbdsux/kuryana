@@ -1,12 +1,11 @@
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Type, TypeVar, Union
+from datetime import datetime, UTC
+from typing import Any, TypeVar
 from urllib.parse import urljoin
 
-import primp
 from bs4 import BeautifulSoup
 from bs4.element import NavigableString, Tag
 
-from app import MYDRAMALIST_WEBSITE
+from app import MYDRAMALIST_WEBSITE, client
 
 T = TypeVar("T", bound="Parser")
 
@@ -20,7 +19,7 @@ ScrapeTypes = {
 class Parser:
     """Main Parser"""
 
-    headers: Dict[str, str] = {
+    headers: dict[str, str] = {
         "Referer": MYDRAMALIST_WEBSITE,
     }
 
@@ -33,8 +32,8 @@ class Parser:
         self.ok = ok
 
     @classmethod
-    async def scrape(cls: Type[T], query: str, t: str) -> T:
-        if t not in ScrapeTypes.keys():
+    async def scrape(cls: type[T], query: str, t: str) -> T:
+        if t not in ScrapeTypes:
             raise Exception("Invalid type")
 
         # parse url
@@ -47,8 +46,7 @@ class Parser:
         soup = None
 
         try:
-            client = primp.Client(impersonate="chrome", impersonate_os="linux")
-            resp = client.get(url)
+            resp = await client.get(url)
 
             # set the main soup var
             soup = BeautifulSoup(
@@ -66,7 +64,7 @@ class Parser:
         return cls(soup, query, code, ok)
 
     # get page err, if possible
-    def res_get_err(self) -> Dict[str, Any]:
+    def res_get_err(self) -> dict[str, Any]:
         if self.soup is None:
             return {}
 
@@ -75,7 +73,7 @@ class Parser:
         # if the page was not found,
         # or there was a problem with scraping,
         # try to get the error and return the err message
-        err: Dict[str, Any] = {}
+        err: dict[str, Any] = {}
 
         if container is None:
             return err
@@ -102,13 +100,13 @@ class BaseSearch(Parser):
     def __init__(self, soup: BeautifulSoup, query: str, code: int, ok: bool) -> None:
         super().__init__(soup, query, code, ok)
 
-        self.search_results: Dict[str, List] = {}  # search
+        self.search_results: dict[str, list] = {}  # search
 
-    def search(self) -> Dict[str, Any]:
+    def search(self) -> dict[str, Any]:
         return {
             "query": self.query,
             "results": self.search_results,
-            "scrape_date": datetime.now(timezone.utc),
+            "scrape_date": datetime.now(UTC),
         }
 
 
@@ -116,23 +114,23 @@ class BaseFetch(Parser):
     def __init__(self, soup: BeautifulSoup, query: str, code: int, ok: bool) -> None:
         super().__init__(soup, query, code, ok)
 
-        self.info: Dict[str, Any] = {
+        self.info: dict[str, Any] = {
             "link": urljoin(MYDRAMALIST_WEBSITE, query)  # add `link` first data
         }  # fetch
 
         self._img_attrs = ["src", "data-cfsrc", "data-src"]
 
-    def fetch(self) -> Dict[str, Any]:
+    def fetch(self) -> dict[str, Any]:
         return {
             "slug_query": self.query,
             "data": self.info,
-            "scrape_date": datetime.now(timezone.utc),
+            "scrape_date": datetime.now(UTC),
         }
 
     def _get(self) -> None:
         """handler for parser, override in subclass"""
 
-    def _get_poster(self, container: Union[Tag, NavigableString]) -> Union[str, Any]:
+    def _get_poster(self, container: Tag | NavigableString) -> str | Any:
         poster = container.find("img")
 
         if poster is None:
@@ -178,13 +176,13 @@ class BaseFetch(Parser):
 
     # rating handler, (since it could be N/A which is not convertable to float)
     def _handle_rating(
-        self, component: Union[Tag, NavigableString, None]
-    ) -> Union[str, float, Any]:
+        self, component: Tag | NavigableString | None
+    ) -> str | float | Any:
         if component is None:
             return ""
         try:
             return float(component.text)
-        except Exception:
+        except ValueError:
             pass
 
         return component.text

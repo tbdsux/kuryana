@@ -1,4 +1,4 @@
-from typing import Any, Dict, Tuple
+from typing import Any
 
 from app.handlers.fetch import (
     FetchCast,
@@ -12,7 +12,7 @@ from app.handlers.fetch import (
 from app.handlers.search import Search
 
 
-def error(code: int, description: str) -> Dict[str, Any]:
+def error(code: int, description: str) -> dict[str, Any]:
     return {
         "error": True,
         "code": code,
@@ -23,7 +23,7 @@ def error(code: int, description: str) -> Dict[str, Any]:
 
 
 # search function
-async def search_func(query: str) -> Tuple[int, Dict[str, Any]]:
+async def search_func(query: str) -> tuple[int, dict[str, Any]]:
     f = await Search.scrape(query=query, t="search")
     if not f.ok:
         return f.status_code, error(f.status_code, "An unexpected error occurred.")
@@ -45,8 +45,8 @@ fs = {
 
 
 # fetch function
-async def fetch_func(query: str, t: str) -> Tuple[int, Dict[str, Any]]:
-    if t not in fs.keys():
+async def fetch_func(query: str, t: str) -> tuple[int, dict[str, Any]]:
+    if t not in fs:
         raise Exception("Invalid Error")
 
     f = await fs[t].scrape(query=query, t="page")
