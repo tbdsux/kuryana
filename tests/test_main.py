@@ -73,3 +73,27 @@ def test_unknown_endpoint() -> None:
     response = client.get("/unknown")
     assert response.status_code == 404
     assert response.json() == {"detail": "Not Found"}
+
+
+def test_seasonal() -> None:
+    response = client.get("/seasonal/2026/4")
+    assert response.status_code == 200
+    items = response.json()
+    assert len(items) > 0
+    assert {"Drama", "Movie"} <= {i["category"] for i in items}
+    assert all(isinstance(i["id"], int) and i["title"] for i in items)
+
+
+def test_seasonal_invalid() -> None:
+    assert client.get("/seasonal/abcd/4").status_code == 422
+    assert client.get("/seasonal/2026/9").status_code == 422
+
+
+def test_schedule() -> None:
+    response = client.get("/schedule")
+    assert response.status_code == 200
+    days = response.json()
+    assert len(days) == 7
+    items = [i for d in days for i in d["items"]]
+    assert len(items) > 0
+    assert all(i["title"] and i["episodes"] for i in items)
