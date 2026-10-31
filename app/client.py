@@ -23,6 +23,3 @@ async def get(
     )  # primp wants str
     return await client.get(urljoin(MYDRAMALIST_WEBSITE, path), params=query)
 
-
-async def post(path: str, data: Mapping[str, Any] | None = None) -> primp.AsyncResponse:
-    return await client.post(urljoin(MYDRAMALIST_WEBSITE, path), data=data)
