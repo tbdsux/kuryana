@@ -8,6 +8,8 @@ from app import client
 from app.handlers.calendar import parse_quarter, parse_schedule
 from app.lib.msgspec_json import MsgSpecJSONResponse
 from app.utils import error, fetch_func, search_func
+from app.v2.errors import ERROR_TYPES, error_handler
+from app.v2.routes import router as v2_router
 
 app = FastAPI(
     title="Kuryana",
@@ -22,6 +24,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(v2_router)
+for exc in ERROR_TYPES:
+    app.add_exception_handler(exc, error_handler)
 
 
 @app.get("/")
