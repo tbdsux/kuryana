@@ -14,7 +14,7 @@
 </div>
 
 > [!NOTE]
-> Pages are scraped live on every request and nothing is cached, so responses can take a moment.
+> Pages are scraped live, so a first request can take a moment. Successful responses are then cached for 60 seconds.
 > Kuryana exists only because MyDramaList has no public API, and it will be retired once an official one is released.
 
 ## Deployment
@@ -53,6 +53,8 @@ docker compose -f ./dokploy.docker-compose.yml up -d
 ### Vercel
 
 Import the repository in [Vercel](https://vercel.com/new) and deploy the `main` branch. No extra branch or configuration is needed.
+
+Successful responses are cached for 60 seconds, both in memory and on Vercel's CDN. See [Caching](docs/structure.md#caching).
 
 ## API Use
 
