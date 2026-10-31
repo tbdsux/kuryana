@@ -51,7 +51,10 @@ async def fetch_func(query: str, t: str) -> Tuple[int, Dict[str, Any]]:
 
     f = await fs[t].scrape(query=query, t="page")
     if not f.ok:
-        return f.status_code, f.res_get_err()
+        # MDL sends an empty 500 for unknown drama ids, so there's no error page to parse
+        return f.status_code, f.res_get_err() or error(
+            f.status_code, "An unexpected error occurred."
+        )
     else:
         f._get()
 

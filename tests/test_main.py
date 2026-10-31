@@ -40,15 +40,13 @@ def test_sample_drama() -> None:
 
 
 def test_unknown_drama() -> None:
+    # MDL answers unknown drama ids with an empty 500, not a 404 page
     response = client.get("/id/alkdjaklsdjklasd")
-    assert response.status_code == 404
+    assert response.status_code == 500
     assert response.json() == {
         "error": True,
-        "code": 404,
-        "description": {
-            "title": "The requested page was not found",
-            "info": "You can see this page because the URL you are accessing cannot be found.",
-        },
+        "code": 500,
+        "description": "An unexpected error occurred.",
     }
 
 
