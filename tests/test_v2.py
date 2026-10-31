@@ -1,9 +1,14 @@
 from pathlib import Path
+from types import SimpleNamespace
 
+import pytest
 from bs4 import BeautifulSoup
 from fastapi.testclient import TestClient
 
+from app import client as app_client
+from app import main
 from app.main import app
+from app.cache import TTLCache
 from app.v2.parsers import parse_dramalist
 from app.v2.parsers._helpers import _details
 
@@ -139,3 +144,27 @@ def test_v1_errors_unchanged() -> None:
         "query",
         "page",
     ]
+
+
+def test_response_cache(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[str] = []
+
+    async def fake_get(path: str, params: object = None) -> object:
+        calls.append(path)
+        return SimpleNamespace(status_code=404 if "q1" in path else 200, text="")
+
+    monkeypatch.setattr(app_client, "get", fake_get)
+    monkeypatch.setattr(main, "cache", TTLCache(ttl=60))
+
+    first = client.get("/schedule")
+    assert client.get("/schedule").json() == first.json()
+    assert len(calls) == 1
+
+    client.get("/seasonal/2026/1")
+    client.get("/seasonal/2026/1")  # errors are not cached
+    assert len(calls) == 3
+
+    main.cache.ttl = 0
+    client.get("/schedule")
+    assert len(calls) == 4
+

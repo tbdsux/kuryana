@@ -1,10 +1,12 @@
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Annotated, Any
 
-from fastapi import FastAPI, Path, Response
+from fastapi import FastAPI, Path, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 
 from app import client
+from app.cache import TTLCache
 from app.handlers.calendar import parse_quarter, parse_schedule
 from app.lib.msgspec_json import MsgSpecJSONResponse
 from app.utils import error, fetch_func, search_func
@@ -16,6 +18,32 @@ app = FastAPI(
     default_response_class=MsgSpecJSONResponse,
 )
 
+cache: TTLCache[Response] = TTLCache(ttl=60)
+
+
+# cache the finished response, not the MDL page, so a hit skips scraping and parsing;
+# registered before CORS so CORS headers are still computed per request
+@app.middleware("http")
+async def cache_responses(
+    request: Request, call_next: Callable[[Request], Awaitable[StreamingResponse]]
+) -> Response:
+    if request.method != "GET":
+        return await call_next(request)
+
+    key = f"{request.url.path}?{request.url.query}"
+    if (hit := cache.get(key)) is not None:
+        return hit
+
+    response = await call_next(request)
+    if response.status_code != 200:  # never cache errors, so MDL hiccups don't stick
+        return response
+
+    # call_next always streams bytes; the type only says it could be str
+    body = b"".join([chunk async for chunk in response.body_iterator])  # type: ignore[misc]
+    cached = Response(body, response.status_code, dict(response.headers))
+    cache.set(key, cached)
+    return cached
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,6 +52,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 app.include_router(v2_router)
 for exc in ERROR_TYPES:
