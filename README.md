@@ -7,6 +7,7 @@
   <p>
     <a href="#api-use">API</a> ·
     <a href="docs/v2.md">v2 docs</a> ·
+    <a href="#api-wrappers">Wrappers</a> ·
     <a href="#deployment">Deploy</a> ·
     <a href="https://kuryana.tbdh.app/docs">Swagger</a>
   </p>
@@ -128,6 +129,32 @@ See [docs/v2.md](docs/v2.md) for what changed from v1.
   > Has quirks like requests failing for first time then succeeding.
   >
   > Please start to transition on using the primary deployed endpoint for your projects, thank you.
+
+### API Wrappers
+
+Official clients for JS/TS and Python, both using the v2 API: [kuryana-api-wrappers](https://git.tbdh.app/Libraries/kuryana-api-wrappers) ([usage guide](https://git.tbdh.app/Libraries/kuryana-api-wrappers/src/branch/main/USAGE.md)).
+
+```sh
+# JS/TS (@tbdhdev/kuryana-ts 0.2.0+)
+npm install @tbdhdev/kuryana-ts
+
+# Python 3.12+ (kuryana 0.3.0+)
+pip install kuryana
+```
+
+```ts
+import { Kuryana } from '@tbdhdev/kuryana-ts';
+
+const res = await new Kuryana().getDrama('18452-goblin');
+if (res.success) console.log(res.result.complete_title);
+```
+
+```python
+from kuryana import Kuryana
+
+drama = Kuryana().get_drama("18452-goblin")
+print(drama.data.complete_title)
+```
 
 ## Development
 
