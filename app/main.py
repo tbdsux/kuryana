@@ -41,6 +41,8 @@ async def cache_responses(
     # call_next always streams bytes; the type only says it could be str
     body = b"".join([chunk async for chunk in response.body_iterator])  # type: ignore[misc]
     cached = Response(body, response.status_code, dict(response.headers))
+    # let Vercel's CDN share it for 60s too; s-maxage is stripped before the browser
+    cached.headers.setdefault("Cache-Control", "public, max-age=0, s-maxage=60")
     cache.set(key, cached)
     return cached
 

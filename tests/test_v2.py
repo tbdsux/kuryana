@@ -168,3 +168,7 @@ def test_response_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     client.get("/schedule")
     assert len(calls) == 4
 
+
+def test_cdn_cache_header() -> None:
+    assert client.get("/").headers["cache-control"] == "public, max-age=0, s-maxage=60"
+    assert "cache-control" not in client.get("/v2/nope").headers
