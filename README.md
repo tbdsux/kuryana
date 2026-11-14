@@ -93,7 +93,7 @@ Every successful response looks like this. `data` holds only the scraped info.
 }
 ```
 
-Errors set the real HTTP status (`404`, `422`, `502`, ...) and return:
+Errors set the real HTTP status (`404`, `422`, `502`, `503` when too many requests are waiting on MDL, ...) and return:
 
 ```js
 {

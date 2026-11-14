@@ -41,7 +41,13 @@ def _next_episode(soup: BeautifulSoup) -> dict[str, Any] | None:
         if m is None:
             return None
 
-        raw = json.loads(m.group(1))  # MDL sends every value as a string
+        try:
+            raw = json.loads(m.group(1))  # MDL sends every value as a string
+        except ValueError:
+            return None
+        if not isinstance(raw, dict):
+            return None
+
         return {
             "episode_number": _int(raw.get("episode_number")),
             "total_episodes": _int(raw.get("episodes")),

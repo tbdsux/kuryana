@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -13,6 +14,7 @@ def test_index() -> None:
     )  # this is weird
 
 
+@pytest.mark.live
 def test_sample_drama() -> None:
     dramas = [
         {
@@ -39,6 +41,7 @@ def test_sample_drama() -> None:
         assert r.json()["data"]["complete_title"] == i["expected"]["complete_title"]
 
 
+@pytest.mark.live
 def test_unknown_drama() -> None:
     # MDL answers unknown drama ids with an empty 500, not a 404 page
     response = client.get("/id/alkdjaklsdjklasd")
@@ -50,12 +53,14 @@ def test_unknown_drama() -> None:
     }
 
 
+@pytest.mark.live
 def test_sample_people() -> None:
     response = client.get("/people/4444-kim-jong-min")
     assert response.status_code == 200
     assert response.json()["data"]["name"] == "Kim Jong Min"
 
 
+@pytest.mark.live
 def test_unknown_people() -> None:
     response = client.get("/people/asdasdadadasdadasdasdaswerwer")
     assert response.status_code == 404
@@ -75,6 +80,7 @@ def test_unknown_endpoint() -> None:
     assert response.json() == {"detail": "Not Found"}
 
 
+@pytest.mark.live
 def test_seasonal() -> None:
     response = client.get("/seasonal/2026/4")
     assert response.status_code == 200
@@ -89,6 +95,7 @@ def test_seasonal_invalid() -> None:
     assert client.get("/seasonal/2026/9").status_code == 422
 
 
+@pytest.mark.live
 def test_schedule() -> None:
     response = client.get("/schedule")
     assert response.status_code == 200

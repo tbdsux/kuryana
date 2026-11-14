@@ -23,3 +23,6 @@ indent-width = 4
 [tool.ruff.lint]
 select = ["C", "E", "F", "W", "B", "B9"]
 ignore = ["E501", "E203"]
+
+[tool.pytest.ini_options]
+markers = ["live: calls the real MyDramaList site (needs network, can break when MDL changes)"]

@@ -34,8 +34,9 @@ def _text(el: Tag | None) -> str:
 
 
 def _int(s: str | None) -> int | None:
-    digits = re.sub(r"[^\d]", "", s or "")
-    return int(digits) if digits else None
+    # first number, thousands separators allowed: "#1,234" -> 1234, "12.5" -> 12
+    m = re.search(r"\d[\d,]*", s or "")
+    return int(m.group().replace(",", "")) if m else None
 
 
 def _float(s: str | None) -> float | None:
@@ -152,7 +153,7 @@ def pagination(soup: BeautifulSoup) -> dict[str, int]:
     pages = [1]
     for a in soup.select("ul.pagination a.page-link[href]"):
         query = parse_qs(urlparse(str(a["href"])).query)
-        pages += [int(p) for p in query.get("page", [])]
+        pages += [int(p) for p in query.get("page", []) if p.isdigit()]
 
     current = _int(_text(soup.select_one("ul.pagination li.active"))) or 1
     return {"page": current, "total_pages": max(pages + [current])}

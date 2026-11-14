@@ -13,7 +13,6 @@ class Search(BaseSearch):
 
     def __init__(self, soup: BeautifulSoup, query: str, code: int, ok: bool) -> None:
         super().__init__(soup, query, code, ok)
-        self.url = "search?q=" + self.query.replace(" ", "+")
         self.mdl_container_id = "mdl-"
 
     # get the main html container for the each search results
@@ -47,11 +46,15 @@ class Search(BaseSearch):
 
     # get the year info of the result
     def _res_get_year_info(
-        self, result_container: NavigableString | Tag
+        self, result_container: Tag
     ) -> tuple[str | None, int | None, str | bool]:
-        # extract the type and year
-        _typeyear = result_container.find("span", class_="text-muted").text  # type: ignore
-        _year_eps = _typeyear.split("-")[1]
+        # extract the type and year, e.g. "Korean Drama - 2016, 16 episodes"
+        _typeyear_tag = result_container.find("span", class_="text-muted")
+        if _typeyear_tag is None:
+            return None, None, False
+        _typeyear = _typeyear_tag.text
+        _parts = _typeyear.split("-")
+        _year_eps = _parts[1] if len(_parts) > 1 else ""
 
         year: int | None = None  # type error below
 
@@ -68,6 +71,7 @@ class Search(BaseSearch):
             year = None
 
         # get the # of eps if series
+        series_ep: str | bool
         try:
             series_ep = _year_eps.split(",")[1].strip()
         except IndexError:
@@ -83,7 +87,7 @@ class Search(BaseSearch):
                 result_container.find("h6", class_="text-primary title").find("a")[  # type: ignore
                     "href"
                 ]
-            ).replace("/", ""),  # type: ignore
+            ).replace("/", ""),
         )
 
     # search results handler
@@ -104,14 +108,16 @@ class Search(BaseSearch):
             title = title_elem.text.strip()
 
             # extract the URL slug
-            url_slug = title_elem.find("a").get("href")
+            _title_a = title_elem.find("a")
+            url_slug = _title_a.get("href") if _title_a is not None else None
             if url_slug is not None:
                 r["slug"] = url_slug.replace("/", "", 1)
             else:
                 continue  # skip this result if URL slug is not found
 
             # get the thumbnail
-            _thumb = str(result.find("img", class_="img-responsive")["data-src"]).split(
+            _img = result.find("img", class_="img-responsive")
+            _thumb = str(_img.get("data-src", "") if _img is not None else "").split(
                 "/1280/"
             )
             if len(_thumb) > 1:
@@ -131,17 +137,22 @@ class Search(BaseSearch):
                 # specific drama info
                 r["type"], r["year"], r["series"] = self._res_get_year_info(result)
 
-                # extract drama rating (could either be empty string or number)
-                rating = result.find("span", class_="score").text
-                if rating:
-                    r["rating"] = float(rating)
+                # extract drama rating (could be empty, "N/A" or a number)
+                _score = result.find("span", class_="score")
+                try:
+                    r["rating"] = float(_score.text)
+                except (AttributeError, ValueError):
+                    pass  # no score, empty or "N/A": leave it out, as before
 
                 _dramas.append(r)
                 continue
 
             # it can only be a person otherwise,
             r["name"] = title.strip()
-            r["nationality"] = result.find("div", class_="text-muted").text.strip()
+            _nationality = result.find("div", class_="text-muted")
+            r["nationality"] = (
+                _nationality.text.strip() if _nationality is not None else ""
+            )
             _people.append(r)
 
         self.search_results["dramas"] = _dramas

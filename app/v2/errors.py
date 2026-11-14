@@ -16,7 +16,12 @@ from app.v2 import PREFIX
 class MDLError(Exception):
     def __init__(self, code: int, title: str = "", info: str = "") -> None:
         self.code = code
-        title = title or HTTPStatus(code).phrase
+        if not title:
+            # Cloudflare's 52x codes aren't in HTTPStatus
+            try:
+                title = HTTPStatus(code).phrase
+            except ValueError:
+                title = f"MyDramaList returned HTTP {code}"
         self.message = f"{title}. {info}" if info else title
 
 
@@ -49,14 +54,22 @@ def _status_and_message(exc: Exception) -> tuple[int, str]:
 
 async def error_handler(request: Request, exc: Exception) -> Response:
     """Every error under /v2 -> `{success: false, data: null, message}`; v1 keeps FastAPI's defaults."""
-    if not request.url.path.startswith(PREFIX + "/"):
+    path = request.url.path
+    if path != PREFIX and not path.startswith(PREFIX + "/"):
         return await _v1_error(request, exc)
 
     code, message = _status_and_message(exc)
+    # keep headers the exception carries, e.g. `Allow` on a 405
+    headers = exc.headers if isinstance(exc, StarletteHTTPException) else None
 
     return MsgSpecJSONResponse(
-        {"success": False, "data": None, "message": message}, status_code=code
+        {"success": False, "data": None, "message": message},
+        status_code=code,
+        headers=headers,
     )
 
 
-ERROR_TYPES = (MDLError, RequestValidationError, StarletteHTTPException, Exception)
+# bare `Exception` is not registered here: its handler would run in the outermost
+# ServerErrorMiddleware, outside CORS, so 500s would lack CORS headers.
+# `app.main` catches those inside CORS and passes them to `error_handler` instead.
+ERROR_TYPES = (MDLError, RequestValidationError, StarletteHTTPException)

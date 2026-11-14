@@ -10,6 +10,9 @@ from app.v2.errors import MDLError
 from app.v2.parsers import error_info
 
 
+BUSY = "Too many requests to MyDramaList in progress, try again shortly."
+
+
 async def scrape(
     path: str,
     parse: Callable[[BeautifulSoup], dict[str, Any]],
@@ -19,6 +22,8 @@ async def scrape(
         resp = await client.get(path, params=params)
     except primp.PrimpError as e:
         raise MDLError(502, "Failed to reach MyDramaList", str(e)) from e
+    except client.MDLBusy as e:
+        raise MDLError(503, info=BUSY) from e
 
     soup = BeautifulSoup(resp.text, "lxml")
 

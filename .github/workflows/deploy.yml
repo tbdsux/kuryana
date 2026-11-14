@@ -6,6 +6,11 @@ on:
     types: [completed]
     branches: [main]
 
+# one deploy at a time, in order
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
 jobs:
   deployment:
     # only deploy pushes to main that passed CI, not PRs or failed runs
@@ -21,9 +26,18 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
+            set -e
             echo "Deploying kuryana..."
             cd ${{secrets.FOLDER_PATH}}
-            git fetch origin
+            git fetch origin main
+            # deploy exactly the commit that passed CI, and only while it's still the
+            # tip of main: if a newer commit landed, its own CI run deploys it
+            # (and if that run fails, the last good deploy stays up)
+            SHA=${{ github.event.workflow_run.head_sha }}
+            if [ "$(git rev-parse origin/main)" != "$SHA" ]; then
+              echo "main has moved past $SHA; leaving it to the newer run"
+              exit 0
+            fi
             git checkout main
-            git pull origin main
+            git merge --ff-only "$SHA"  # like the old `git pull`: stops rather than discard local edits
             docker compose up -d --build

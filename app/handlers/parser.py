@@ -1,6 +1,5 @@
 from datetime import datetime, UTC
 from typing import Any, TypeVar
-from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 from bs4.element import NavigableString, Tag
@@ -10,10 +9,7 @@ from app import MYDRAMALIST_WEBSITE, client
 T = TypeVar("T", bound="Parser")
 
 
-ScrapeTypes = {
-    "search": urljoin(MYDRAMALIST_WEBSITE, "search?q="),
-    "page": MYDRAMALIST_WEBSITE,
-}
+ScrapeTypes = {"search", "page"}
 
 
 class Parser:
@@ -36,17 +32,16 @@ class Parser:
         if t not in ScrapeTypes:
             raise Exception("Invalid type")
 
-        # parse url
-        url = urljoin(ScrapeTypes[t], query)
-        if t == "search":
-            url = ScrapeTypes[t] + query
-
         ok = True
         code = 500  # default to 500, internal server error
         soup = None
 
         try:
-            resp = await client.get(url)
+            if t == "search":
+                # as a param, so `&`, `#` and `+` in the query are encoded
+                resp = await client.get("search", params={"q": query})
+            else:
+                resp = await client.get(query)
 
             # set the main soup var
             soup = BeautifulSoup(
@@ -58,6 +53,9 @@ class Parser:
             code = resp.status_code
             ok = resp.status_code == 200
 
+        except client.MDLBusy:
+            ok = False
+            code = 503
         except Exception:
             ok = False
 
@@ -115,7 +113,7 @@ class BaseFetch(Parser):
         super().__init__(soup, query, code, ok)
 
         self.info: dict[str, Any] = {
-            "link": urljoin(MYDRAMALIST_WEBSITE, query)  # add `link` first data
+            "link": client.mdl_url(query)  # add `link` first data
         }  # fetch
 
         self._img_attrs = ["src", "data-cfsrc", "data-src"]

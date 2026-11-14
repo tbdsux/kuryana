@@ -45,13 +45,14 @@ def test_parse_dramalist_fixture() -> None:
 
 def test_details_skips_hidden_rows() -> None:
     soup = BeautifulSoup(
-        '<li><b>Watchers:</b> 331,157</li>'
+        "<li><b>Watchers:</b> 331,157</li>"
         '<li style="display: none;"><b>Favorites:</b> 0</li>',
         "lxml",
     )
     assert _details(soup.find_all("li")) == {"watchers": 331157}
 
 
+@pytest.mark.live
 def test_search() -> None:
     r = client.get("/v2/search", params={"q": "goblin"})
     assert r.status_code == 200
@@ -60,6 +61,7 @@ def test_search() -> None:
     assert all(d["id"] and d["slug"] for d in data["dramas"])
 
 
+@pytest.mark.live
 def test_drama() -> None:
     r = client.get("/v2/dramas/18452-goblin")
     assert r.status_code == 200
@@ -73,6 +75,7 @@ def test_drama() -> None:
     assert data["cast"][0]["slug"] == "440-gong-yoo"
 
 
+@pytest.mark.live
 def test_drama_subpages() -> None:
     cast = client.get("/v2/dramas/18452-goblin/cast").json()["data"]
     assert "Main Role" in cast["cast"]
@@ -85,12 +88,14 @@ def test_drama_subpages() -> None:
     assert reviews["reviews"][0]["ratings"]["overall"] is not None
 
 
+@pytest.mark.live
 def test_unknown_drama() -> None:
     r = client.get("/v2/dramas/alkdjaklsdjklasd")
     assert r.status_code == 404
     assert r.json() == {"success": False, "data": None, "message": "Not Found"}
 
 
+@pytest.mark.live
 def test_person() -> None:
     r = client.get("/v2/people/4444-kim-jong-min")
     assert r.status_code == 200
@@ -99,6 +104,7 @@ def test_person() -> None:
     assert isinstance(data["age"], int)
 
 
+@pytest.mark.live
 def test_unknown_person() -> None:
     r = client.get("/v2/people/asdasdadadasdadasdasdaswerwer")
     assert r.status_code == 404
@@ -110,6 +116,7 @@ def test_unknown_person() -> None:
     }
 
 
+@pytest.mark.live
 def test_list() -> None:
     r = client.get("/v2/lists/E1VK0WEL?page=2")
     assert r.status_code == 200
@@ -130,6 +137,7 @@ def test_unknown_v2_route() -> None:
     assert r.json() == {"success": False, "data": None, "message": "Not Found"}
 
 
+@pytest.mark.live
 def test_success_envelope() -> None:
     body = client.get("/v2/people/4444-kim-jong-min").json()
     assert set(body) == {"success", "data", "link", "scraped_at"}
@@ -169,6 +177,8 @@ def test_response_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     assert len(calls) == 4
 
 
-def test_cdn_cache_header() -> None:
+def test_cdn_cache_header(monkeypatch: pytest.MonkeyPatch) -> None:
+    # fresh cache: s-maxage counts down once a response is stored
+    monkeypatch.setattr(main, "cache", TTLCache(ttl=60))
     assert client.get("/").headers["cache-control"] == "public, max-age=0, s-maxage=60"
     assert "cache-control" not in client.get("/v2/nope").headers
