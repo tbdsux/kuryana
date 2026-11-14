@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 from bs4 import BeautifulSoup
@@ -17,16 +18,22 @@ def _href(el: Tag | None) -> str | None:
     return str(el["href"]) if el and el.has_attr("href") else None
 
 
+def _num(el: Tag | None) -> float | None:
+    # "#1,234" -> 1234.0, "8.5" -> 8.5, "N/A" -> None
+    m = re.search(r"\d[\d,]*(?:\.\d+)?", el.get_text(strip=True) if el else "")
+    return float(m.group().replace(",", "")) if m else None
+
+
 def _rank(card: Tag, cls: str) -> int | None:
-    el = card.select_one(f".{cls} .stats-num")
-    return int(el.get_text(strip=True).lstrip("#")) if el else None
+    n = _num(card.select_one(f".{cls} .stats-num"))
+    return int(n) if n is not None else None
 
 
 def _base(card: Tag) -> dict[str, Any]:
     btn = card.select_one("[data-id]")
     img = card.select_one("img")
     return {
-        "id": int(str(btn["data-id"])) if btn else None,
+        "id": int(n) if btn and (n := str(btn["data-id"])).isdigit() else None,
         "cover": str(img["src"]) if img and img.has_attr("src") else None,
     }
 
@@ -42,7 +49,6 @@ def parse_quarter(html: str) -> list[dict[str, Any]]:
             continue
 
         title = el.select_one(".cover-content .title a")
-        score = el.select_one(".score")
         items.append(
             {
                 **_base(el),
@@ -51,7 +57,7 @@ def parse_quarter(html: str) -> list[dict[str, Any]]:
                 "category": category,
                 "type": _text(el.select_one(".content-type")),
                 "released": _text(el.select_one(".release-time")),
-                "rating": float(score.get_text(strip=True)) if score else None,
+                "rating": _num(el.select_one(".score")),
                 "ranked": _rank(el, "ranking"),
                 "popularity": _rank(el, "popularity"),
                 "synopsis": _text(el.select_one(".synopsis")),
