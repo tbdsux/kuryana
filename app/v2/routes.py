@@ -2,6 +2,7 @@ from typing import Any
 
 from fastapi import APIRouter, Query
 
+from app.client import segment
 from app.v2 import PREFIX, parsers
 from app.v2.scraper import scrape
 
@@ -17,34 +18,36 @@ async def search(q: str = Query(..., min_length=1), page: int = Page) -> dict[st
 
 @router.get("/dramas/{slug}")
 async def drama(slug: str) -> dict[str, Any]:
-    return await scrape(slug, parsers.parse_drama)
+    return await scrape(segment(slug), parsers.parse_drama)
 
 
 @router.get("/dramas/{slug}/cast")
 async def drama_cast(slug: str) -> dict[str, Any]:
-    return await scrape(f"{slug}/cast", parsers.parse_cast)
+    return await scrape(f"{segment(slug)}/cast", parsers.parse_cast)
 
 
 @router.get("/dramas/{slug}/episodes")
 async def drama_episodes(slug: str) -> dict[str, Any]:
-    return await scrape(f"{slug}/episodes", parsers.parse_episodes)
+    return await scrape(f"{segment(slug)}/episodes", parsers.parse_episodes)
 
 
 @router.get("/dramas/{slug}/reviews")
 async def drama_reviews(slug: str, page: int = Page) -> dict[str, Any]:
-    return await scrape(f"{slug}/reviews", parsers.parse_reviews, {"page": page})
+    return await scrape(
+        f"{segment(slug)}/reviews", parsers.parse_reviews, {"page": page}
+    )
 
 
 @router.get("/people/{slug}")
 async def person(slug: str) -> dict[str, Any]:
-    return await scrape(f"people/{slug}", parsers.parse_person)
+    return await scrape(f"people/{segment(slug)}", parsers.parse_person)
 
 
 @router.get("/lists/{list_id}")
 async def mdl_list(list_id: str, page: int = Page) -> dict[str, Any]:
-    return await scrape(f"list/{list_id}", parsers.parse_list, {"page": page})
+    return await scrape(f"list/{segment(list_id)}", parsers.parse_list, {"page": page})
 
 
 @router.get("/users/{username}/dramalist")
 async def dramalist(username: str) -> dict[str, Any]:
-    return await scrape(f"dramalist/{username}", parsers.parse_dramalist)
+    return await scrape(f"dramalist/{segment(username)}", parsers.parse_dramalist)

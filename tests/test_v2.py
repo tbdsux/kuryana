@@ -169,6 +169,8 @@ def test_response_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     assert len(calls) == 4
 
 
-def test_cdn_cache_header() -> None:
+def test_cdn_cache_header(monkeypatch: pytest.MonkeyPatch) -> None:
+    # fresh cache: s-maxage counts down once a response is stored
+    monkeypatch.setattr(main, "cache", TTLCache(ttl=60))
     assert client.get("/").headers["cache-control"] == "public, max-age=0, s-maxage=60"
     assert "cache-control" not in client.get("/v2/nope").headers
