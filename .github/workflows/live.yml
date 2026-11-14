@@ -1,0 +1,27 @@
+name: Live MDL tests
+
+# Scrapes the real MyDramaList site to catch markup changes early.
+# Kept out of CI so an MDL outage or redesign never blocks a deploy.
+on:
+  schedule:
+    - cron: "0 6 * * *" # daily, 06:00 UTC
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install the project
+        run: uv sync --locked --all-extras --dev
+
+      - name: Test against live MDL
+        run: uv run pytest tests -m live

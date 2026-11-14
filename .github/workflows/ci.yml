@@ -19,12 +19,17 @@ jobs:
         run: uv python install
 
       - name: Install the project
-        run: uv sync --all-extras --dev
+        run: uv sync --locked --all-extras --dev
 
       - name: Lint with ruff
         run: |
           uv run ruff check
+          uv run ruff format --check
 
+      - name: Type check with mypy
+        run: uv run mypy app
+
+      # offline only: this run gates deploys, so it must not depend on MDL being up.
+      # The live tests run in live.yml.
       - name: Test with pytest
-        run: |
-          uv run pytest tests
+        run: uv run pytest tests -m "not live"

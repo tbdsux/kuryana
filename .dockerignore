@@ -1,0 +1,15 @@
+# keep the image to what `uv sync` and the app need: no local envs, secrets or tooling state
+.git
+.github
+.venv
+venv
+.env
+.env.*
+.vercel
+.vscode
+.mypy_cache
+.pytest_cache
+.ruff_cache
+**/__pycache__
+tests
+docs
